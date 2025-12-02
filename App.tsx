@@ -52,7 +52,7 @@ const App: React.FC = () => {
         setIsAuthLoading(false);
         return;
       }
-      const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+      const unsubscribe = auth.onAuthStateChanged((firebaseUser: any) => {
         setUser(firebaseUser as User | null);
         setIsAuthLoading(false);
       });
@@ -99,6 +99,16 @@ const App: React.FC = () => {
     }};
     const addTransaction = (transaction: Omit<Transaction, 'id'>) => { const newTransaction: Transaction = { ...transaction, id: Date.now().toString() }; const updated = [newTransaction, ...transactions]; setTransactions(updated); updateFirestore({ transactions: updated }); };
     const updateTransaction = (updatedTransaction: Transaction) => { const updated = transactions.map(t => t.id === updatedTransaction.id ? updatedTransaction : t); setTransactions(updated); updateFirestore({ transactions: updated }); };
+    
+    // FIX: Unified handler to satisfy Typescript strict function types
+    const handleSaveTransaction = (transaction: Transaction | Omit<Transaction, 'id'>) => {
+        if ('id' in transaction) {
+            updateTransaction(transaction as Transaction);
+        } else {
+            addTransaction(transaction);
+        }
+    };
+
     const deleteTransaction = (id: string) => { const updated = transactions.filter(t => t.id !== id); setTransactions(updated); updateFirestore({ transactions: updated }); };
     const handleSettingsSave = (newSettings: AppSettings) => { setSettings(newSettings); updateFirestore({ settings: newSettings }); };
     const handleWalletsChange = (newWallets: Wallet[]) => { setWallets(newWallets); updateFirestore({ wallets: newWallets }); };
@@ -144,7 +154,7 @@ const App: React.FC = () => {
         <Header userName={user.displayName || user.email?.split('@')[0] || 'Alquimista'} onSettingsClick={toggleSettings} onLogoutClick={handleLogout} />
         <main className="flex-grow p-4 pb-24 pt-32">{renderView()}</main>
         <BottomNav activeView={activeView} setActiveView={setActiveView} />
-        {isModalOpen && <TransactionModal isOpen={isModalOpen} onClose={closeModal} onSave={editingTransaction ? updateTransaction : addTransaction} transaction={editingTransaction || prefilledTransaction} transmutationLists={transmutationLists} wallets={wallets} settings={settings} transactions={transactions} onScanReceipt={handleOpenReceiptScanner} />}
+        {isModalOpen && <TransactionModal isOpen={isModalOpen} onClose={closeModal} onSave={handleSaveTransaction} transaction={editingTransaction || prefilledTransaction} transmutationLists={transmutationLists} wallets={wallets} settings={settings} transactions={transactions} onScanReceipt={handleOpenReceiptScanner} />}
         {isReceiptScannerOpen && <ReceiptScannerModal isOpen={isReceiptScannerOpen} onClose={() => setIsReceiptScannerOpen(false)} onScanComplete={handleScanComplete} />}
         {isCardsModalOpen && <CreditCardModal isOpen={isCardsModalOpen} onClose={() => setIsCardsModalOpen(false)} wallets={wallets} transactions={transactions} />}
         {confirmationState.isOpen && <ConfirmationDialog isOpen={confirmationState.isOpen} onClose={handleCloseConfirmation} onConfirm={handleConfirmAction} title="Confirmar Acción" message={confirmationState.message} />}
