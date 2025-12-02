@@ -1,5 +1,12 @@
-// Configuración de Firebase para Alquimia Financiera
-// Las claves han sido provistas por el usuario.
+// IMPORTANT: This is a template. You must create your own Firebase project
+// and replace the placeholder configuration with your actual keys.
+
+// 1. Go to https://firebase.google.com/ and create a new project.
+// 2. In your project, go to Project Settings (gear icon).
+// 3. In the "General" tab, scroll down to "Your apps".
+// 4. Click the web icon (</>) to create a new web app.
+// 5. Give it a name (e.g., "Alquimia Financiera Web").
+// 6. Firebase will give you a configuration object. Copy the values into the firebaseConfig object below.
 
 const firebaseConfig = {
   apiKey: "AIzaSyCS1NNLSVDBCEA9PLqb5G1Dy0y6iucVlNk",
@@ -11,10 +18,10 @@ const firebaseConfig = {
 };
 
 // Check if the config has been changed from the placeholder values
-// With the real keys inserted above, this will evaluate to true.
 export const isFirebaseConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY";
 
-let app, auth, db, googleProvider;
+// FIX: Added explicit 'any' types to prevent TS7034 errors
+let app: any, auth: any, db: any, googleProvider: any;
 
 if (isFirebaseConfigured) {
   try {
@@ -29,7 +36,7 @@ if (isFirebaseConfigured) {
     
     // Enable persistence
     // @ts-ignore
-    db.enablePersistence().catch((err) => {
+    db.enablePersistence().catch((err: any) => {
         if (err.code == 'failed-precondition') {
             console.warn('Firestore persistence failed: multiple tabs open.');
         } else if (err.code == 'unimplemented') {
