@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import * as Lucide from 'lucide-react';
 import type { Transaction, Settings, TransactionFeeling } from '../types';
 import { DEFAULT_CATEGORIES, FEELING_OPTIONS } from '../constants';
@@ -9,6 +9,7 @@ interface TransactionListProps {
   onEdit: (transaction: Transaction) => void;
   onDelete: (id: string) => void;
   settings: Settings;
+  isPrivacyMode: boolean;
 }
 
 const FeelingIndicator: React.FC<{ feeling?: TransactionFeeling }> = ({ feeling = 'necessary' }) => {
@@ -24,12 +25,13 @@ const FeelingIndicator: React.FC<{ feeling?: TransactionFeeling }> = ({ feeling 
   return <Icon size={18} className={colorClasses[feeling]} title={feelingData.label} />;
 };
 
-const TransactionItem: React.FC<{ transaction: Transaction; onEdit: () => void; onDelete: () => void; settings: Settings }> = ({ transaction, onEdit, onDelete, settings }) => {
+const TransactionItem: React.FC<{ transaction: Transaction; onEdit: () => void; onDelete: () => void; settings: Settings; isPrivacyMode: boolean }> = ({ transaction, onEdit, onDelete, settings, isPrivacyMode }) => {
   const category = DEFAULT_CATEGORIES.find(c => c.id === transaction.categoryId);
   const Icon = category ? (Lucide[category.icon as keyof typeof Lucide] as React.ElementType) : Lucide.MoreHorizontal;
   const isExpense = transaction.type === 'expense';
   
   const costInHours = settings.hourlyRate > 0 ? (transaction.amount / settings.hourlyRate).toFixed(1) : 0;
+  const amountDisplay = isPrivacyMode ? '****' : `$${transaction.amount.toFixed(2)}`;
 
   return (
     <div className="flex items-center p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg mb-3">
@@ -46,7 +48,7 @@ const TransactionItem: React.FC<{ transaction: Transaction; onEdit: () => void; 
       </div>
       <div className="text-right mx-4">
         <p className={`font-bold ${isExpense ? 'text-rose-500' : 'text-emerald-500'}`}>
-          {isExpense ? '-' : '+'}${transaction.amount.toFixed(2)}
+          {isExpense ? '-' : '+'}{amountDisplay}
         </p>
         {isExpense && <p className="text-xs text-amber-500 flex items-center justify-end gap-1"><Lucide.Hourglass size={12}/> {costInHours}h</p>}
       </div>
@@ -59,14 +61,14 @@ const TransactionItem: React.FC<{ transaction: Transaction; onEdit: () => void; 
   );
 };
 
-const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit, onDelete, settings }) => {
+const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit, onDelete, settings, isPrivacyMode }) => {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Transacciones</h1>
       {transactions.length > 0 ? (
         <div>
           {transactions.map(tx => (
-            <TransactionItem key={tx.id} transaction={tx} onEdit={() => onEdit(tx)} onDelete={() => onDelete(tx.id)} settings={settings}/>
+            <TransactionItem key={tx.id} transaction={tx} onEdit={() => onEdit(tx)} onDelete={() => onDelete(tx.id)} settings={settings} isPrivacyMode={isPrivacyMode} />
           ))}
         </div>
       ) : (
