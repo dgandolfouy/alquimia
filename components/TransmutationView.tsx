@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ClipboardList, CheckSquare, Square, X, Plus, Trash2, Search, Sparkles, Calendar, Repeat, Edit2 } from 'lucide-react';
-import type { TransmutationList, TransmutationItem, HistoricalPriceItem, Asset, Transaction } from '../types';
+import type { TransmutationList, TransmutationItem, Asset, Transaction } from '../types';
 import Card from './ui/Card';
 import { findPromotions } from '../services/geminiService';
 
@@ -8,8 +8,6 @@ interface TransmutationViewProps {
   lists: TransmutationList[];
   setLists: (lists: TransmutationList[]) => void;
   onCompleteItem: (item: TransmutationItem, listId: string) => void;
-  historicalPrices: HistoricalPriceItem; // Kept in types but unused component removed
-  addHistoricalPrice: (name: string, price: number) => void;
   onRequestDeleteList: (listId: string) => void;
   onRequestDeleteItem: (listId: string, itemId: string) => void;
   assets: Asset[];
@@ -99,7 +97,7 @@ const TransmutationView: React.FC<TransmutationViewProps> = ({
     e.preventDefault();
     if (newListName.trim()) {
       const newList: TransmutationList = { id: `list-${Date.now()}`, name: newListName.trim(), items: [] };
-      setLists([...lists, newList]); // React should handle this update cleanly now
+      setLists([...lists, newList]);
       setNewListName('');
     }
   };
@@ -145,7 +143,6 @@ const TransmutationView: React.FC<TransmutationViewProps> = ({
     if (completedItem) onCompleteItem(completedItem, listId);
   };
 
-  // Filter out lists that have their own dedicated views
   const visibleLists = lists.filter(l => !l.isCreditCardView && !l.isLoansView);
 
   return (
