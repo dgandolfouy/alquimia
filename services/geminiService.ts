@@ -33,9 +33,7 @@ export const getFinancialTip = async (transactions: any[]): Promise<string> => {
     const response = await ai.models.generateContent({
       model: modelPro,
       contents: prompt,
-      // FIX: Removed experimental 'thinkingConfig' to resolve type error
     });
-    // FIX: Handle possibly undefined text response
     return response.text ? response.text.trim() : "";
   } catch (error) {
     console.error("Error fetching financial tip from Gemini:", error);
@@ -43,7 +41,6 @@ export const getFinancialTip = async (transactions: any[]): Promise<string> => {
   }
 };
 
-// Helper function to convert file to base64 for Gemini API
 const fileToGenerativePart = async (file: File) => {
   const base64EncodedDataPromise = new Promise((resolve) => {
     const reader = new FileReader();
@@ -55,7 +52,6 @@ const fileToGenerativePart = async (file: File) => {
   };
 };
 
-// New function to analyze receipt
 export const analyzeReceipt = async (imageFile: File): Promise<{ name: string; price: number }[]> => {
   if (!API_KEY) {
     throw new Error("VITE_API_KEY is not set. Cannot analyze receipt.");
@@ -79,10 +75,8 @@ export const analyzeReceipt = async (imageFile: File): Promise<{ name: string; p
         contents: { parts: [imagePart, { text: prompt }] },
     });
     
-    // FIX: Handle possibly undefined text response
     let textResponse = response.text ? response.text.trim() : "";
     
-    // Clean up potential markdown code block
     if (textResponse.startsWith('```json')) {
       textResponse = textResponse.substring(7);
     }
@@ -92,7 +86,6 @@ export const analyzeReceipt = async (imageFile: File): Promise<{ name: string; p
 
     const parsed = JSON.parse(textResponse);
     if (Array.isArray(parsed)) {
-      // Validate structure
       return parsed.filter(item => typeof item.name === 'string' && typeof item.price === 'number');
     }
     return [];
@@ -126,7 +119,6 @@ export const findPromotions = async (items: string[]): Promise<string> => {
             model: modelPro,
             contents: prompt,
         });
-        // FIX: Handle possibly undefined text response
         return response.text ? response.text.trim() : "";
     } catch (error) {
         console.error("Error fetching promotions from Gemini:", error);
@@ -158,7 +150,6 @@ export const suggestCategory = async (description: string, categories: Category[
             model: 'gemini-2.5-flash', 
             contents: prompt,
         });
-        // FIX: Handle possibly undefined text response
         const categoryId = response.text ? response.text.trim() : "";
         if (categories.some(c => c.id === categoryId)) {
             return categoryId;
