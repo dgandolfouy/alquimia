@@ -1,27 +1,26 @@
-
 import React, { useState } from 'react';
-import { Settings, LogOut } from 'lucide-react';
+import { Settings, LogOut, Eye, EyeOff } from 'lucide-react';
 
 interface HeaderProps {
   userName: string;
   onSettingsClick: () => void;
   onLogoutClick: () => void;
+  onPrivacyClick: () => void;
+  isPrivacyMode: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ userName, onSettingsClick, onLogoutClick }) => {
+const Header: React.FC<HeaderProps> = ({ userName, onSettingsClick, onLogoutClick, onPrivacyClick, isPrivacyMode }) => {
   const [isRotating, setIsRotating] = useState(false);
 
   const handleSettingsClick = () => {
       setIsRotating(true);
       onSettingsClick();
-      // Reset animation after it completes
       setTimeout(() => setIsRotating(false), 600); 
   };
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-b border-gray-200/50 dark:border-gray-800/50 z-30 h-24 flex items-center justify-between px-6 transition-all duration-300">
       <div className="flex flex-col items-start justify-center h-full pt-2">
-        {/* Container with strict left alignment */}
         <div className="flex flex-col items-start gap-0">
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-widest mb-0.5">
                 Bienvenido
@@ -31,7 +30,10 @@ const Header: React.FC<HeaderProps> = ({ userName, onSettingsClick, onLogoutClic
             </h1>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        <button onClick={onPrivacyClick} className="p-2 text-gray-400 hover:text-violet-500 transition-colors">
+            {isPrivacyMode ? <EyeOff size={20} /> : <Eye size={20} />}
+        </button>
         <button 
             onClick={handleSettingsClick} 
             className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors rounded-full active:bg-gray-200 dark:active:bg-gray-700"
