@@ -38,11 +38,11 @@
 </head>
   <body class="bg-gray-100 text-gray-800">
     <div id="root"></div>
-    <!-- Firebase SDKs (Legacy CDN approach for simplicity in migration) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     
-    <script type="module" src="/App.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
