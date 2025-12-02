@@ -8,7 +8,10 @@ import { DEFAULT_CATEGORIES } from '../constants';
 import YearlySummary from './YearlySummary';
 import FinancialHealthIndicator from './FinancialHealthIndicator';
 
-const BudgetStatus: React.FC<{ transactions: Transaction[]; settings: Settings }> = ({ transactions, settings }) => {
+// Utility to hide numbers
+const formatMoney = (amount: number, isPrivacy: boolean) => isPrivacy ? '****' : `$${amount.toLocaleString()}`;
+
+const BudgetStatus: React.FC<{ transactions: Transaction[]; settings: Settings; isPrivacyMode: boolean }> = ({ transactions, settings, isPrivacyMode }) => {
     const budgetSummaries = useMemo(() => {
         if (!settings.budgets) return [];
         
@@ -68,7 +71,7 @@ const BudgetStatus: React.FC<{ transactions: Transaction[]; settings: Settings }
                         <div className="flex justify-between items-center text-sm mb-1">
                             <span className="font-medium text-gray-600 dark:text-gray-300">{budget.categoryName}</span>
                             <span className="text-xs text-gray-500 dark:text-gray-400">
-                                ${budget.spent.toFixed(0)} / ${budget.limit.toFixed(0)}
+                                {formatMoney(budget.spent, isPrivacyMode)} / {formatMoney(budget.limit, isPrivacyMode)}
                             </span>
                         </div>
                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -90,9 +93,10 @@ interface DashboardProps {
   onNewTransaction: () => void;
   onOpenCards: () => void;
   summary: { income: number, expenses: number, balance: number, savingsRate: number };
+  isPrivacyMode: boolean;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTransaction, summary }) => {
+const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTransaction, summary, isPrivacyMode }) => {
   const [tip, setTip] = useState<string>("Cargando sabiduría del Oráculo...");
 
   useEffect(() => {
@@ -105,11 +109,9 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTran
       }
     };
     fetchTip();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions]);
   
   const derivedSummary = useMemo(() => {
-    // Runway calculation
     const monthSet = new Set(transactions.map(t => t.date.substring(0, 7)));
     const numMonths = monthSet.size || 1;
     const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
@@ -142,7 +144,6 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTran
   return (
     <div className="space-y-6">
       
-      {/* Centerpiece - Main Button */}
       <FinancialHealthIndicator savingsRate={summary.savingsRate} onClick={onNewTransaction} />
 
       <div className="grid grid-cols-2 gap-4">
@@ -151,7 +152,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTran
             <ArrowUpRight size={18} />
             <span className="text-sm font-light text-gray-500 dark:text-gray-400">Ingresos del mes</span>
           </div>
-          <p className="text-2xl font-semibold mt-1">${summary.income.toFixed(2)}</p>
+          <p className="text-2xl font-semibold mt-1">{formatMoney(summary.income, isPrivacyMode)}</p>
           <p className="text-xs text-emerald-500/80 flex items-center gap-1 mt-1"><Hourglass size={12}/> ~{derivedSummary.hoursWorked.toFixed(1)}h de trabajo</p>
         </Card>
         <Card className="text-rose-500">
@@ -159,12 +160,12 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTran
             <ArrowDownLeft size={18} />
             <span className="text-sm font-light text-gray-500 dark:text-gray-400">Gastos del mes</span>
           </div>
-          <p className="text-2xl font-semibold mt-1">${summary.expenses.toFixed(2)}</p>
+          <p className="text-2xl font-semibold mt-1">{formatMoney(summary.expenses, isPrivacyMode)}</p>
            <p className="text-xs text-rose-500/80 flex items-center gap-1 mt-1"><Hourglass size={12}/> ~{derivedSummary.hoursSpent.toFixed(1)}h de vida</p>
         </Card>
       </div>
       
-      <BudgetStatus transactions={transactions} settings={settings} />
+      <BudgetStatus transactions={transactions} settings={settings} isPrivacyMode={isPrivacyMode} />
 
       <Card>
         <div className="flex items-center gap-2 mb-2">
