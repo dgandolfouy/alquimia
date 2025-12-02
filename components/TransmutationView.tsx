@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { ClipboardList, CheckSquare, Square, X, Plus, Trash2, TrendingUp, Search, Sparkles } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
@@ -8,7 +7,8 @@ import { findPromotions } from '../services/geminiService';
 
 interface TransmutationViewProps {
   lists: TransmutationList[];
-  setLists: React.Dispatch<React.SetStateAction<TransmutationList[]>>;
+  // FIX: Simplified type to match the handler in App.tsx
+  setLists: (lists: TransmutationList[]) => void;
   onCompleteItem: (item: TransmutationItem, listId: string) => void;
   historicalPrices: HistoricalPriceItem;
   addHistoricalPrice: (name: string, price: number) => void;
@@ -116,7 +116,8 @@ const TransmutationView: React.FC<TransmutationViewProps> = ({
     e.preventDefault();
     if (newListName.trim()) {
       const newList: TransmutationList = { id: `list-${Date.now()}`, name: newListName.trim(), items: [] };
-      setLists(prev => [...prev, newList]);
+      // FIX: Use lists prop directly instead of functional update
+      setLists([...lists, newList]);
       setNewListName('');
     }
   };
@@ -124,12 +125,13 @@ const TransmutationView: React.FC<TransmutationViewProps> = ({
   const handleAddItem = (listId: string, name: string, amount: number) => {
     if (!name.trim()) return;
     const newItem: TransmutationItem = { id: `item-${Date.now()}`, name: name.trim(), amount: amount || 0, isCompleted: false };
-    setLists(prev => prev.map(l => l.id === listId ? { ...l, items: [...l.items, newItem] } : l));
+    // FIX: Use lists prop directly
+    setLists(lists.map(l => l.id === listId ? { ...l, items: [...l.items, newItem] } : l));
   };
   
   const handleToggleItem = (listId: string, itemId: string) => {
     let completedItem: TransmutationItem | null = null;
-    setLists(prevLists => prevLists.map(list => {
+    const updatedLists = lists.map(list => {
       if (list.id === listId) {
         return {
           ...list,
@@ -143,16 +145,16 @@ const TransmutationView: React.FC<TransmutationViewProps> = ({
         };
       }
       return list;
-    }));
+    });
+    // FIX: Use lists prop directly
+    setLists(updatedLists);
     if (completedItem) onCompleteItem(completedItem, listId);
   };
 
-  // Filter out the CC list if it exists in data, we don't show it here anymore
   const visibleLists = lists.filter(l => !l.isCreditCardView);
 
   return (
     <div className="space-y-6">
-      
       <div className="flex items-center gap-3">
         <ClipboardList size={32} className="text-violet-500" />
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Transmutación</h1>
@@ -220,7 +222,6 @@ const TransmutationView: React.FC<TransmutationViewProps> = ({
                 <button type="submit" className="text-violet-500"><Plus/></button>
             </form>
             
-            {/* Monthly Spent Total for this list */}
             <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">Total Gastado este Mes:</span>
                 <span className="text-lg font-bold text-rose-500">${totalSpentThisMonth.toLocaleString()}</span>
