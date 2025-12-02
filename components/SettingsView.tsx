@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import type { Settings, Theme, Wallet, Entity, Asset } from '../types';
 import Card from './ui/Card';
-import { Plus, X, Users, CreditCard, Wallet as WalletIcon, Coins, Trash2, Clock } from 'lucide-react';
+import { Plus, X, Users, Wallet as WalletIcon, Coins, Trash2, Clock } from 'lucide-react';
 
 interface SettingsViewProps {
   settings: Settings;
@@ -11,6 +10,7 @@ interface SettingsViewProps {
   onThemeChange: (theme: Theme) => void;
   wallets: Wallet[];
   onWalletsChange: (wallets: Wallet[]) => void;
+  isPrivacyMode: boolean; // Add prop
 }
 
 const ensureArrays = (settings: Settings): Settings => ({
@@ -20,18 +20,15 @@ const ensureArrays = (settings: Settings): Settings => ({
     guarantees: settings.guarantees || []
 });
 
-const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, theme, onThemeChange, wallets, onWalletsChange }) => {
+const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, theme, onThemeChange, wallets, onWalletsChange, isPrivacyMode }) => {
   const [localSettings, setLocalSettings] = useState<Settings>(ensureArrays(settings));
-  
-  // States for forms
   const [newEntity, setNewEntity] = useState('');
   const [newAsset, setNewAsset] = useState<{name: string, amount: string}>({name: '', amount: ''});
   const [newWallet, setNewWallet] = useState<{name: string, type: Wallet['type']}>({name: '', type: 'debit'});
-  const [monthlyHours, setMonthlyHours] = useState(160); // Default standard work hours
+  const [monthlyHours, setMonthlyHours] = useState(160);
 
   useEffect(() => {
     setLocalSettings(ensureArrays(settings));
-    // Reverse calculate monthly hours if possible, otherwise default
     if (settings.hourlyRate > 0) {
         const totalIncome = settings.assets?.reduce((sum, a) => sum + a.amount, 0) || 0;
         if (totalIncome > 0) {
@@ -40,15 +37,11 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, theme, on
     }
   }, [settings]);
 
-  const handleSave = () => {
-    onSave(localSettings);
-  };
+  const handleSave = () => onSave(localSettings);
   
-  // Update Hourly Rate based on Assets and Work Hours
   const updateHourlyRate = (assets: Asset[], hours: number) => {
       const totalIncome = assets.reduce((sum, a) => sum + a.amount, 0);
-      const newRate = hours > 0 ? totalIncome / hours : 0;
-      return newRate;
+      return hours > 0 ? totalIncome / hours : 0;
   }
 
   const handleHoursChange = (hours: number) => {
@@ -59,7 +52,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, theme, on
       onSave(updated);
   }
   
-  // Asset Handlers (Active Column)
   const handleAddAsset = (e: React.FormEvent) => {
       e.preventDefault();
       if (newAsset.name && newAsset.amount) {
@@ -81,7 +73,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, theme, on
       onSave(updated);
   };
 
-  // Entity Handlers
   const handleAddEntity = (e: React.FormEvent) => {
     e.preventDefault();
     if (newEntity.trim()) {
@@ -99,7 +90,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, theme, on
       onSave(updated);
   };
   
-  // Wallet Handlers
   const handleAddWallet = (e: React.FormEvent) => {
       e.preventDefault();
       if (newWallet.name) {
@@ -110,9 +100,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, theme, on
       }
   }
 
-  const handleDeleteWallet = (id: string) => {
-      onWalletsChange(wallets.filter(w => w.id !== id));
-  }
+  const handleDeleteWallet = (id: string) => onWalletsChange(wallets.filter(w => w.id !== id));
 
   const handleWalletUpdate = (id: string, field: keyof Wallet, value: any) => {
       const updatedWallets = wallets.map(w => w.id === id ? { ...w, [field]: value } : w);
@@ -133,7 +121,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, theme, on
         </div>
       </Card>
 
-      {/* ACTIVOS / INGRESO FIJO */}
       <Card>
           <div className="flex items-center gap-2 mb-2">
               <Coins size={20} className="text-emerald-500"/>
@@ -145,7 +132,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, theme, on
                   <div key={asset.id} className="flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-2 rounded text-sm">
                       <span>{asset.name}</span>
                       <div className="flex items-center gap-3">
-                        <span className="font-mono text-emerald-600 font-bold">${asset.amount}</span>
+                        <span className="font-mono text-emerald-600 font-bold">{isPrivacyMode ? '****' : `$${asset.amount}`}</span>
                         <button onClick={() => handleDeleteAsset(asset.id)} className="text-gray-400 hover:text-rose-500"><X size={16}/></button>
                       </div>
                   </div>
@@ -157,14 +144,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, theme, on
               <button type="submit" className="bg-emerald-500 p-2 rounded-lg text-white"><Plus size={20}/></button>
           </form>
 
-          {/* Work Hours Calculation for Philosophy */}
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
              <div className="flex items-center gap-2 mb-2 text-gray-600 dark:text-gray-300">
                  <Clock size={16} />
                  <span className="text-sm font-medium">Filosofía del Tiempo</span>
              </div>
              <p className="text-xs text-gray-500 mb-2">
-                 Ingresa tus horas de trabajo mensuales para que la app calcule cuánta "vida" te cuestan tus compras (ej. Coca Cola = 0.5 horas).
+                 Ingresa tus horas de trabajo mensuales para que la app calcule cuánta "vida" te cuestan tus compras.
              </p>
              <div className="flex items-center gap-4">
                  <label className="text-sm">Horas Laborales / Mes:</label>
@@ -179,7 +165,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, theme, on
           </div>
       </Card>
 
-      {/* BILLETERAS / TARJETAS */}
       <Card>
           <div className="flex items-center gap-2 mb-2">
               <WalletIcon size={20} className="text-gray-600 dark:text-gray-300"/>
@@ -231,7 +216,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, theme, on
           </form>
       </Card>
 
-      {/* ENTIDADES */}
       <Card>
           <div className="flex items-center gap-2 mb-2">
               <Users size={20} className="text-gray-600 dark:text-gray-300"/>
