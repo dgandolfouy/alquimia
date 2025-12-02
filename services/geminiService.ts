@@ -1,21 +1,20 @@
 import { GoogleGenAI } from "@google/genai";
 import { Category } from "../types";
 
-const API_KEY = process.env.API_KEY;
+// FIX: Use import.meta.env.VITE_API_KEY for Vite compatibility in production
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 if (!API_KEY) {
-  // This is a fallback for development. In a real environment, API_KEY should be set.
-  console.warn("API_KEY is not set. Using a placeholder. AI features will not work.");
+  console.warn("VITE_API_KEY is not set. AI features will not work.");
 }
 
-// FIX: Removed placeholder fallback for API Key to adhere to security and environment-based configuration best practices.
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 const modelPro = 'gemini-3-pro-preview';
 const modelProImage = 'gemini-3-pro-image-preview';
 
 export const getFinancialTip = async (transactions: any[]): Promise<string> => {
   if (!API_KEY) {
-    return "Configura tu API Key de Gemini para recibir consejos personalizados.";
+    return "Configura tu VITE_API_KEY en Vercel para recibir consejos.";
   }
   
   const recentTransactions = transactions.slice(0, 10).map(t => `${t.description}: $${t.amount}`).join(', ');
@@ -53,14 +52,14 @@ const fileToGenerativePart = async (file: File) => {
     reader.readAsDataURL(file);
   });
   return {
-    inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
+    inlineData: { data: await base64EncodedDataPromise as string, mimeType: file.type },
   };
 };
 
 // New function to analyze receipt
 export const analyzeReceipt = async (imageFile: File): Promise<{ name: string; price: number }[]> => {
   if (!API_KEY) {
-    throw new Error("API_KEY is not set. Cannot analyze receipt.");
+    throw new Error("VITE_API_KEY is not set. Cannot analyze receipt.");
   }
   
   const imagePart = await fileToGenerativePart(imageFile);
@@ -104,7 +103,7 @@ export const analyzeReceipt = async (imageFile: File): Promise<{ name: string; p
 
 export const findPromotions = async (items: string[]): Promise<string> => {
     if (!API_KEY) {
-        return "La función de búsqueda de ofertas requiere una API Key de Gemini.";
+        return "La función de búsqueda de ofertas requiere una VITE_API_KEY de Gemini.";
     }
     if (items.length === 0) {
         return "Añade artículos a tu lista para buscar ofertas."
@@ -154,12 +153,10 @@ export const suggestCategory = async (description: string, categories: Category[
 
     try {
         const response = await ai.models.generateContent({
-            // FIX: Updated model to 'gemini-2.5-flash' as it is recommended for basic text tasks.
-            model: 'gemini-2.5-flash', // Use a faster model for this task
+            model: 'gemini-2.5-flash', 
             contents: prompt,
         });
         const categoryId = response.text.trim();
-        // Basic validation to see if the response is a valid category ID
         if (categories.some(c => c.id === categoryId)) {
             return categoryId;
         }
