@@ -29,8 +29,10 @@ const YearlySummary: React.FC<YearlySummaryProps> = ({ transactions }) => {
 
     const expensesByCategory = new Map<string, number>();
     currentYearTxs.forEach(tx => {
-      const currentAmount = expensesByCategory.get(tx.categoryId) || 0;
-      expensesByCategory.set(tx.categoryId, currentAmount + tx.amount);
+      // FIX: Ensure categoryId is a string before using it as a key
+      const catId = tx.categoryId || 'unknown';
+      const currentAmount = expensesByCategory.get(catId) || 0;
+      expensesByCategory.set(catId, currentAmount + tx.amount);
     });
 
     return Array.from(expensesByCategory.entries()).map(([categoryId, amount]) => {
