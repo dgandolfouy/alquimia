@@ -47,14 +47,12 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, on
   const [type, setType] = useState<TransactionType>(transaction?.type || 'expense');
   const [amount, setAmount] = useState<string>(transaction?.amount ? String(transaction.amount) : '');
   const [description, setDescription] = useState<string>(transaction?.description || '');
-  const [listId, setListId] = useState<string>(''); // Target List in Transmutation
+  const [listId, setListId] = useState<string>('');
   const [element, setElement] = useState<AlchemicalElement>('Tierra');
   const [walletId, setWalletId] = useState<string>(transaction?.walletId || '');
   const [entityId, setEntityId] = useState<string>(transaction?.entityId || (settings.entities?.[0]?.id || ''));
   const [date, setDate] = useState<string>(transaction?.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0]);
   const [feeling, setFeeling] = useState<TransactionFeeling>(transaction?.feeling || 'necessary');
-  
-  // Advanced fields
   const [installments, setInstallments] = useState<{ current: number, total: number }>({ current: 1, total: 1 });
 
   const selectedWallet = wallets.find(w => w.id === walletId);
@@ -91,13 +89,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, on
     if (isNaN(parsedAmount) || parsedAmount <= 0 || !listId || !walletId) return;
 
     const newTransactionData: any = {
-      type,
-      amount: parsedAmount,
-      description,
-      listId,
-      element,
-      walletId,
-      entityId,
+      type, amount: parsedAmount, description, listId, element, walletId, entityId,
       date: new Date(date).toISOString(),
       feeling: type === 'expense' ? feeling : undefined,
     };
@@ -156,11 +148,12 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, on
                             <button key={elKey} type="button" onClick={() => setElement(elKey)} className={`flex flex-col items-center p-2 rounded-lg border-2 transition-all ${isSelected ? 'border-violet-500 bg-violet-500/10' : 'border-transparent bg-gray-200 dark:bg-gray-700'}`}>
                                 <AlchemicalSymbol element={elKey} className={isSelected ? def.color : 'text-gray-500 dark:text-gray-400'} />
                                 <span className={`mt-1.5 text-xs font-bold ${isSelected ? 'text-violet-600 dark:text-violet-300' : 'text-gray-600 dark:text-gray-400'}`}>{elKey}</span>
-                                <span className={`text-[10px] ${isSelected ? 'text-violet-500' : 'text-gray-500 dark:text-gray-500'}`}>{def.keyword}</span>
                             </button>
                          )
                      })}
                  </div>
+                 {/* Description below selection */}
+                 <p className="text-xs text-center text-gray-500 mt-2 italic">{ELEMENT_DEFINITIONS[element].description}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
