@@ -9,9 +9,10 @@ import { Sparkles, BrainCircuit } from 'lucide-react';
 interface SynthesisViewProps {
     transactions: Transaction[];
     summary: { balance: number };
+    isPrivacyMode: boolean; // Add prop
 }
 
-const SynthesisView: React.FC<SynthesisViewProps> = ({ transactions, summary }) => {
+const SynthesisView: React.FC<SynthesisViewProps> = ({ transactions, summary, isPrivacyMode }) => {
     const [tip, setTip] = useState<string>("Consultando a la IA...");
 
     useEffect(() => {
@@ -44,7 +45,7 @@ const SynthesisView: React.FC<SynthesisViewProps> = ({ transactions, summary }) 
         <p className="text-gray-600 dark:text-gray-300 italic text-sm">"{tip}"</p>
       </Card>
       
-      <PhilosophersStone monthlyBalance={summary.balance} />
+      <PhilosophersStone monthlyBalance={summary.balance} isPrivacyMode={isPrivacyMode} />
       <ElementalBalance transactions={transactions} />
     </div>
   );
