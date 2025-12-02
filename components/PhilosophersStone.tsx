@@ -5,9 +5,10 @@ import { ChevronsRight, Info } from 'lucide-react';
 
 interface PhilosophersStoneProps {
     monthlyBalance: number;
+    isPrivacyMode: boolean;
 }
 
-const PhilosophersStone: React.FC<PhilosophersStoneProps> = ({ monthlyBalance }) => {
+const PhilosophersStone: React.FC<PhilosophersStoneProps> = ({ monthlyBalance, isPrivacyMode }) => {
     const annualReturn = 1.08; // 8%
 
     const projectionData = useMemo(() => {
@@ -36,7 +37,7 @@ const PhilosophersStone: React.FC<PhilosophersStoneProps> = ({ monthlyBalance })
                  </div>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Con tu ritmo de ahorro actual de <span className="font-bold text-violet-500">${monthlySavingsDisplay.toFixed(2)}/mes</span>, así es como podría transmutar tu riqueza.
+                Con tu ritmo de ahorro actual de <span className="font-bold text-violet-500">{isPrivacyMode ? '****' : `$${monthlySavingsDisplay.toFixed(2)}`}/mes</span>, así es como podría transmutar tu riqueza.
             </p>
             <div className="h-52">
                  <ResponsiveContainer width="100%" height="100%">
@@ -49,7 +50,7 @@ const PhilosophersStone: React.FC<PhilosophersStoneProps> = ({ monthlyBalance })
                         </defs>
                         <XAxis dataKey="year" stroke={document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'} fontSize={12} />
                         <YAxis stroke={document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'} fontSize={12} tickFormatter={(value) => `$${Number(value)/1000}k`}/>
-                        <Tooltip contentStyle={{ backgroundColor: document.documentElement.classList.contains('dark') ? '#1f2937' : '#fff', border: '1px solid #374151', borderRadius: '8px' }} formatter={(value: number) => `$${value.toLocaleString('es-ES')}`}/>
+                        <Tooltip contentStyle={{ backgroundColor: document.documentElement.classList.contains('dark') ? '#1f2937' : '#fff', border: '1px solid #374151', borderRadius: '8px' }} formatter={(value: number) => isPrivacyMode ? '****' : `$${value.toLocaleString('es-ES')}`}/>
                         <Area type="monotone" dataKey="amount" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorUv)" />
                     </AreaChart>
                 </ResponsiveContainer>
@@ -58,7 +59,7 @@ const PhilosophersStone: React.FC<PhilosophersStoneProps> = ({ monthlyBalance })
                 <span className="text-sm text-gray-500 dark:text-gray-400">Futuro:</span>
                 <ChevronsRight size={18} className="text-gray-400 dark:text-gray-500" />
                 <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-fuchsia-400">
-                    ${finalAmount.toLocaleString('es-ES')}
+                    {isPrivacyMode ? '****' : `$${finalAmount.toLocaleString('es-ES')}`}
                 </span>
             </div>
         </Card>
