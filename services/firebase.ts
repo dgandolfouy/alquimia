@@ -1,13 +1,6 @@
 // IMPORTANT: This is a template. You must create your own Firebase project
 // and replace the placeholder configuration with your actual keys.
 
-// 1. Go to https://firebase.google.com/ and create a new project.
-// 2. In your project, go to Project Settings (gear icon).
-// 3. In the "General" tab, scroll down to "Your apps".
-// 4. Click the web icon (</>) to create a new web app.
-// 5. Give it a name (e.g., "Alquimia Financiera Web").
-// 6. Firebase will give you a configuration object. Copy the values into the firebaseConfig object below.
-
 const firebaseConfig = {
   apiKey: "AIzaSyCS1NNLSVDBCEA9PLqb5G1Dy0y6iucVlNk",
   authDomain: "alquimia-56a4a.firebaseapp.com",
