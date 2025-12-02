@@ -33,11 +33,10 @@ export const getFinancialTip = async (transactions: any[]): Promise<string> => {
     const response = await ai.models.generateContent({
       model: modelPro,
       contents: prompt,
-      config: {
-        thinkingConfig: { thinkingBudget: 32768 }
-      }
+      // FIX: Removed experimental 'thinkingConfig' to resolve type error
     });
-    return response.text.trim();
+    // FIX: Handle possibly undefined text response
+    return response.text ? response.text.trim() : "";
   } catch (error) {
     console.error("Error fetching financial tip from Gemini:", error);
     return "La sabiduría del Oráculo está momentáneamente nublada. Intenta más tarde.";
@@ -80,7 +79,9 @@ export const analyzeReceipt = async (imageFile: File): Promise<{ name: string; p
         contents: { parts: [imagePart, { text: prompt }] },
     });
     
-    let textResponse = response.text.trim();
+    // FIX: Handle possibly undefined text response
+    let textResponse = response.text ? response.text.trim() : "";
+    
     // Clean up potential markdown code block
     if (textResponse.startsWith('```json')) {
       textResponse = textResponse.substring(7);
@@ -125,7 +126,8 @@ export const findPromotions = async (items: string[]): Promise<string> => {
             model: modelPro,
             contents: prompt,
         });
-        return response.text.trim();
+        // FIX: Handle possibly undefined text response
+        return response.text ? response.text.trim() : "";
     } catch (error) {
         console.error("Error fetching promotions from Gemini:", error);
         return "No se pudieron buscar ofertas en este momento. El cosmos no está alineado.";
@@ -156,7 +158,8 @@ export const suggestCategory = async (description: string, categories: Category[
             model: 'gemini-2.5-flash', 
             contents: prompt,
         });
-        const categoryId = response.text.trim();
+        // FIX: Handle possibly undefined text response
+        const categoryId = response.text ? response.text.trim() : "";
         if (categories.some(c => c.id === categoryId)) {
             return categoryId;
         }
