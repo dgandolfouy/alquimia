@@ -6,17 +6,8 @@ export interface Asset {
   id: string;
   name: string;
   amount: number;
-}
-
-export interface Entity {
-  id: string;
-  name: string;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  icon: string;
+  frequency: 'monthly' | 'bi-monthly' | 'weekly';
+  day: number; // Day of the month (1-31) or week (1-7)
 }
 
 export interface Wallet {
@@ -35,25 +26,20 @@ export interface Transaction {
   type: TransactionType;
   amount: number;
   description: string;
-  listId: string;
-  categoryId?: string; // Legacy
+  listId: string; 
   element: AlchemicalElement;
   walletId: string;
-  entityId?: string;
   date: string;
   feeling?: TransactionFeeling;
-  installments?: {
-    current: number;
-    total: number;
-  };
+  installments?: { current: number; total: number; };
 }
 
 export interface Settings {
   hourlyRate: number;
-  assets: Asset[];
-  entities: Entity[];
+  assets: Asset[]; 
   guarantees: any[];
   budgets?: { [key: string]: number };
+  monthlyHours?: number;
 }
 
 export interface User {
@@ -69,8 +55,8 @@ export interface TransmutationItem {
   name: string;
   amount: number;
   isCompleted: boolean;
-  dueDate?: string; // Día del mes (ej: "15")
-  isRecurring?: boolean; // Si es true, no se borra al fin de mes, solo se resetea
+  dueDate?: string; 
+  isRecurring?: boolean;
 }
 
 export interface TransmutationList {
@@ -78,14 +64,5 @@ export interface TransmutationList {
   name: string;
   items: TransmutationItem[];
   isCreditCardView?: boolean;
-  isLoansView?: boolean; // New flag for Loans
-}
-
-export interface HistoricalPrice {
-  price: number;
-  date: string;
-}
-
-export interface HistoricalPriceItem {
-  [itemName: string]: HistoricalPrice[];
+  isLoansView?: boolean;
 }
