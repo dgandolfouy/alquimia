@@ -1,0 +1,7 @@
+{
+  "name": "Alquimia Financiera",
+  "description": "A comprehensive financial management app that combines expense tracking with behavioral psychology and AI insights to help you transform your relationship with money. Track everything, gain wisdom, and achieve financial alchemy.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
