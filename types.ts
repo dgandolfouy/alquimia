@@ -1,4 +1,3 @@
-
 export type View = 'home' | 'transactions' | 'transmutar' | 'synthesis' | 'settings';
 
 export type AlchemicalElement = 'Tierra' | 'Agua' | 'Aire' | 'Fuego';
@@ -6,7 +5,7 @@ export type AlchemicalElement = 'Tierra' | 'Agua' | 'Aire' | 'Fuego';
 export interface Asset {
   id: string;
   name: string;
-  amount: number; // Monthly expected income
+  amount: number;
 }
 
 export interface Entity {
@@ -36,14 +35,13 @@ export interface Transaction {
   type: TransactionType;
   amount: number;
   description: string;
-  listId: string; // Replaces categoryId basically, links to TransmutationList
-  categoryId?: string; // Legacy support
+  listId: string;
+  categoryId?: string; // Legacy
   element: AlchemicalElement;
   walletId: string;
   entityId?: string;
   date: string;
   feeling?: TransactionFeeling;
-  // Credit Card specifics
   installments?: {
     current: number;
     total: number;
@@ -52,14 +50,12 @@ export interface Transaction {
 
 export interface Settings {
   hourlyRate: number;
-  assets: Asset[]; // New: Active columns
+  assets: Asset[];
   entities: Entity[];
-  // Legacy support or if needed later
   guarantees: any[];
   budgets?: { [key: string]: number };
 }
 
-// Updated User type for Firebase
 export interface User {
   uid: string;
   email: string | null;
@@ -73,13 +69,16 @@ export interface TransmutationItem {
   name: string;
   amount: number;
   isCompleted: boolean;
+  dueDate?: string; // Día del mes (ej: "15")
+  isRecurring?: boolean; // Si es true, no se borra al fin de mes, solo se resetea
 }
 
 export interface TransmutationList {
   id: string;
   name: string;
   items: TransmutationItem[];
-  isCreditCardView?: boolean; // Special flag for the CC list
+  isCreditCardView?: boolean;
+  isLoansView?: boolean; // New flag for Loans
 }
 
 export interface HistoricalPrice {
