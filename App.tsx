@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { auth, db, isFirebaseConfigured } from './services/firebase';
 import IntroScreen from './components/IntroScreen';
-import type { Transaction, Wallet, View, Settings as AppSettings, Theme, TransmutationList, TransmutationItem, User } from './types';
-import { DEFAULT_WALLETS, DEFAULT_TRANSMUTATION_LISTS, DEFAULT_ASSETS } from './constants';
+import type { Transaction, Wallet, View, Settings as AppSettings, HistoricalPriceItem, Theme, TransmutationList, TransmutationItem, User } from './types';
+import { DEFAULT_WALLETS, DEFAULT_TRANSMUTATION_LISTS, DEFAULT_ENTITIES, DEFAULT_ASSETS } from './constants';
 import Dashboard from './components/Dashboard';
 import TransactionList from './components/TransactionList';
 import SettingsView from './components/SettingsView';
@@ -10,6 +10,7 @@ import Login from './components/Login';
 import TransactionModal from './components/TransactionModal';
 import BottomNav from './components/BottomNav';
 import TransmutationView from './components/TransmutationView';
+import ReceiptScannerModal from './components/ReceiptScannerModal';
 import SynthesisView from './components/SynthesisView';
 import Header from './components/Header';
 import ConfirmationDialog from './components/ui/ConfirmationDialog';
@@ -21,18 +22,22 @@ const App: React.FC = () => {
     const [isAuthLoading, setIsAuthLoading] = useState(true);
     const [showIntro, setShowIntro] = useState(true);
     
+    // App data states
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [wallets, setWallets] = useState<Wallet[]>(DEFAULT_WALLETS);
-    const [settings, setSettings] = useState<AppSettings>({ hourlyRate: 0, assets: DEFAULT_ASSETS, guarantees: [], monthlyHours: 160 });
+    const [settings, setSettings] = useState<AppSettings>({ hourlyRate: 0, assets: DEFAULT_ASSETS, entities: DEFAULT_ENTITIES, guarantees: [] });
+    const [historicalPrices, setHistoricalPrices] = useState<HistoricalPriceItem>({});
     const [transmutationLists, setTransmutationLists] = useState<TransmutationList[]>(DEFAULT_TRANSMUTATION_LISTS);
     const [theme, setTheme] = useState<Theme>('dark');
     
+    // UI States
     const [activeView, setActiveView] = useState<View>('home');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const [prefilledTransaction, setPrefilledTransaction] = useState<Partial<Transaction> | null>(null);
+    const [isReceiptScannerOpen, setIsReceiptScannerOpen] = useState(false);
     const [isCardsModalOpen, setIsCardsModalOpen] = useState(false);
-    const [isPrivacyMode, setIsPrivacyMode] = useState(false);
+    const [isPrivacyMode, setIsPrivacyMode] = useState(false); // New Privacy Mode
     
     const [confirmationState, setConfirmationState] = useState<{ isOpen: boolean; message: string; onConfirm: (() => void) | null }>({ isOpen: false, message: '', onConfirm: null });
   
@@ -41,6 +46,7 @@ const App: React.FC = () => {
         return () => clearTimeout(timer);
     }, []);
 
+    // Firebase Auth Listener
     useEffect(() => {
       if (!isFirebaseConfigured || !auth) { setIsAuthLoading(false); return; }
       const unsubscribe = auth.onAuthStateChanged((firebaseUser: any) => {
@@ -50,11 +56,12 @@ const App: React.FC = () => {
       return () => unsubscribe();
     }, []);
   
+    // Firestore Data Listener
     useEffect(() => {
       if (!user || !db) {
         setTransactions([]); setWallets(DEFAULT_WALLETS);
-        setSettings({ hourlyRate: 0, assets: DEFAULT_ASSETS, guarantees: [], monthlyHours: 160 });
-        setTransmutationLists(DEFAULT_TRANSMUTATION_LISTS);
+        setSettings({ hourlyRate: 0, assets: DEFAULT_ASSETS, entities: DEFAULT_ENTITIES, guarantees: [] });
+        setHistoricalPrices({}); setTransmutationLists(DEFAULT_TRANSMUTATION_LISTS);
         return;
       }
       const docRef = db.collection('users').doc(user.uid);
@@ -63,14 +70,24 @@ const App: React.FC = () => {
           const data = doc.data();
           setTransactions(data?.transactions || []);
           setWallets(data?.wallets || DEFAULT_WALLETS);
-          setSettings(data?.settings || { hourlyRate: 0, assets: DEFAULT_ASSETS, guarantees: [], monthlyHours: 160 });
-          setTransmutationLists(data?.transmutationLists || DEFAULT_TRANSMUTATION_LISTS);
+          setSettings(data?.settings || { hourlyRate: 0, assets: DEFAULT_ASSETS, entities: DEFAULT_ENTITIES, guarantees: [] });
+          setHistoricalPrices(data?.historicalPrices || {});
+          
+          // Ensure fixed lists exist (Loans, Credit Cards)
+          let loadedLists = data?.transmutationLists || DEFAULT_TRANSMUTATION_LISTS;
+          const hasLoans = loadedLists.some((l: TransmutationList) => l.isLoansView);
+          if (!hasLoans) {
+              loadedLists = [...loadedLists, { id: 'list-loans', name: 'Préstamos', items: [], isLoansView: true }];
+          }
+          setTransmutationLists(loadedLists);
+          
           setTheme(data?.theme || 'dark');
         } else {
+          // Initialize new user
           docRef.set({
             transactions: [], wallets: DEFAULT_WALLETS,
-            settings: { hourlyRate: 0, assets: DEFAULT_ASSETS, guarantees: [], monthlyHours: 160 },
-            transmutationLists: DEFAULT_TRANSMUTATION_LISTS,
+            settings: { hourlyRate: 0, assets: DEFAULT_ASSETS, entities: DEFAULT_ENTITIES, guarantees: [] },
+            historicalPrices: {}, transmutationLists: DEFAULT_TRANSMUTATION_LISTS,
             theme: 'dark', createdAt: new Date().toISOString(),
           });
         }
@@ -78,6 +95,7 @@ const App: React.FC = () => {
       return () => unsubscribe();
     }, [user]);
   
+    // Update Functions
     const updateFirestore = (data: object) => { if (user && db) { db.collection('users').doc(user.uid).set(data, { merge: true }).catch(console.error); }};
     
     const handleSaveTransaction = (transaction: Transaction | Omit<Transaction, 'id'>) => {
@@ -85,7 +103,7 @@ const App: React.FC = () => {
         if ('id' in transaction) {
             updatedTxs = transactions.map(t => t.id === transaction.id ? transaction as Transaction : t);
         } else {
-            const newTx = { ...transaction, id: Date.now().toString(), date: new Date(transaction.date || new Date()).toISOString() } as Transaction;
+            const newTx = { ...transaction, id: Date.now().toString() } as Transaction;
             updatedTxs = [newTx, ...transactions];
         }
         setTransactions(updatedTxs);
@@ -105,6 +123,7 @@ const App: React.FC = () => {
         updateFirestore({ transmutationLists: newLists }); 
     };
 
+    // UI Helpers
     useEffect(() => { document.documentElement.className = theme; document.body.className = theme === 'dark' ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-800'; }, [theme]);
     
     const handleLogout = () => auth?.signOut();
@@ -116,10 +135,19 @@ const App: React.FC = () => {
         setPrefilledTransaction({ type: 'expense', amount: item.amount, description: item.name, listId: listId }); 
         setIsModalOpen(true); 
     };
+    
+    const handleOpenReceiptScanner = () => { setIsModalOpen(false); setIsReceiptScannerOpen(true); };
+    const handleScanComplete = (items: { name: string; price: number }[]) => { 
+        const total = items.reduce((s, i) => s + i.price, 0); 
+        const desc = items.map(i => i.name).join(', '); 
+        setPrefilledTransaction({ type: 'expense', amount: total, description: desc }); 
+        setIsReceiptScannerOpen(false); setIsModalOpen(true); 
+    };
 
     const toggleSettings = () => { setActiveView(prev => prev === 'settings' ? 'home' : 'settings'); };
     const togglePrivacy = () => setIsPrivacyMode(!isPrivacyMode);
   
+    // Summary Calculation
     const summary = useMemo(() => { 
         const now = new Date(); 
         const currentMonthTxs = transactions.filter(tx => new Date(tx.date).getMonth() === now.getMonth() && new Date(tx.date).getFullYear() === now.getFullYear()); 
@@ -133,11 +161,14 @@ const App: React.FC = () => {
     }, [transactions, settings.assets]);
   
     const renderView = () => {
+      // Shared props for views needing privacy
+      const commonProps = { isPrivacyMode };
+
       switch (activeView) {
         case 'home': return <Dashboard transactions={transactions} settings={settings} onNewTransaction={openModalForNew} onOpenCards={() => setIsCardsModalOpen(true)} summary={summary} isPrivacyMode={isPrivacyMode} />;
-        case 'transactions': return <TransactionList transactions={transactions} onEdit={openModalForEdit} onDelete={(id) => setConfirmationState({ isOpen: true, message: '¿Borrar transacción?', onConfirm: () => deleteTransaction(id) })} settings={settings} isPrivacyMode={isPrivacyMode} transmutationLists={transmutationLists} />;
-        case 'transmutar': return <TransmutationView lists={transmutationLists} setLists={handleTransmutationListsChange} onCompleteItem={handleCompleteTransmutationItem} onRequestDeleteList={(id) => setConfirmationState({ isOpen: true, message: '¿Borrar lista?', onConfirm: () => handleTransmutationListsChange(transmutationLists.filter(l => l.id !== id)) })} onRequestDeleteItem={(lid, iid) => setConfirmationState({ isOpen: true, message: '¿Borrar ítem?', onConfirm: () => handleTransmutationListsChange(transmutationLists.map(l => l.id === lid ? { ...l, items: l.items.filter(i => i.id !== iid) } : l)) })} transactions={transactions} isPrivacyMode={isPrivacyMode} />;
-        case 'synthesis': return <SynthesisView transactions={transactions} summary={summary} settings={settings} isPrivacyMode={isPrivacyMode} transmutationLists={transmutationLists} />;
+        case 'transactions': return <TransactionList transactions={transactions} onEdit={openModalForEdit} onDelete={(id) => setConfirmationState({ isOpen: true, message: '¿Borrar transacción?', onConfirm: () => deleteTransaction(id) })} settings={settings} isPrivacyMode={isPrivacyMode} />;
+        case 'transmutar': return <TransmutationView lists={transmutationLists} setLists={handleTransmutationListsChange} onCompleteItem={handleCompleteTransmutationItem} onRequestDeleteList={(id) => setConfirmationState({ isOpen: true, message: '¿Borrar lista?', onConfirm: () => handleTransmutationListsChange(transmutationLists.filter(l => l.id !== id)) })} onRequestDeleteItem={(lid, iid) => setConfirmationState({ isOpen: true, message: '¿Borrar ítem?', onConfirm: () => handleTransmutationListsChange(transmutationLists.map(l => l.id === lid ? { ...l, items: l.items.filter(i => i.id !== iid) } : l)) })} assets={settings.assets || []} transactions={transactions} isPrivacyMode={isPrivacyMode} />;
+        case 'synthesis': return <SynthesisView transactions={transactions} summary={summary} isPrivacyMode={isPrivacyMode} />;
         case 'settings': return <SettingsView settings={settings} onSave={handleSettingsSave} theme={theme} onThemeChange={(t) => {setTheme(t); updateFirestore({theme: t})}} wallets={wallets} onWalletsChange={handleWalletsChange} isPrivacyMode={isPrivacyMode} />;
         default: return <Dashboard transactions={transactions} settings={settings} onNewTransaction={openModalForNew} onOpenCards={() => setIsCardsModalOpen(true)} summary={summary} isPrivacyMode={isPrivacyMode} />;
       }
@@ -155,8 +186,9 @@ const App: React.FC = () => {
         <main className="flex-grow p-4 pb-24 pt-32">{renderView()}</main>
         <BottomNav activeView={activeView} setActiveView={setActiveView} />
         
-        {isModalOpen && <TransactionModal isOpen={isModalOpen} onClose={closeModal} onSave={handleSaveTransaction} transaction={editingTransaction || prefilledTransaction} transmutationLists={transmutationLists} wallets={wallets} settings={settings} />}
-        {isCardsModalOpen && <CreditCardModal isOpen={isCardsModalOpen} onClose={() => setIsCardsModalOpen(false)} wallets={wallets} transactions={transactions} onAddManual={handleSaveTransaction} isPrivacyMode={isPrivacyMode} />}
+        {isModalOpen && <TransactionModal isOpen={isModalOpen} onClose={closeModal} onSave={handleSaveTransaction} transaction={editingTransaction || prefilledTransaction} transmutationLists={transmutationLists} wallets={wallets} settings={settings} transactions={transactions} onScanReceipt={handleOpenReceiptScanner} />}
+        {isReceiptScannerOpen && <ReceiptScannerModal isOpen={isReceiptScannerOpen} onClose={() => setIsReceiptScannerOpen(false)} onScanComplete={handleScanComplete} />}
+        {isCardsModalOpen && <CreditCardModal isOpen={isCardsModalOpen} onClose={() => setIsCardsModalOpen(false)} wallets={wallets} transactions={transactions} isPrivacyMode={isPrivacyMode} />}
         
         {confirmationState.isOpen && <ConfirmationDialog isOpen={confirmationState.isOpen} onClose={() => setConfirmationState({ isOpen: false, message: '', onConfirm: null })} onConfirm={() => { if (confirmationState.onConfirm) confirmationState.onConfirm(); setConfirmationState({ isOpen: false, message: '', onConfirm: null }); }} title="Confirmar Acción" message={confirmationState.message} />}
       </div>
