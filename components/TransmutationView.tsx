@@ -15,6 +15,7 @@ interface TransmutationViewProps {
   isPrivacyMode: boolean;
 }
 
+// Utility to hide numbers
 const formatMoney = (amount: number, isPrivacy: boolean) => isPrivacy ? '****' : `$${amount.toLocaleString()}`;
 
 const PromotionsFinder: React.FC<{ listItems: TransmutationItem[] }> = ({ listItems }) => {
