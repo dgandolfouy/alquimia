@@ -7,7 +7,7 @@ export interface Asset {
   name: string;
   amount: number;
   frequency: 'monthly' | 'bi-monthly' | 'weekly';
-  day: number; // Day of the month (1-31) or week (1-7)
+  day: number; 
 }
 
 export interface Wallet {
