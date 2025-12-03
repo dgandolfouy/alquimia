@@ -1,5 +1,4 @@
 export type View = 'home' | 'transactions' | 'transmutar' | 'synthesis' | 'settings';
-
 export type AlchemicalElement = 'Tierra' | 'Agua' | 'Aire' | 'Fuego';
 
 export interface Asset {
