@@ -56,9 +56,9 @@ const Login: React.FC = () => {
       try {
           await auth.signInWithPopup(googleProvider);
       } catch (err: any) {
-          console.error(err);
+          console.error("Google Sign-In Error:", err);
           if (err.code !== 'auth/popup-closed-by-user') {
-             setError(err.message || 'Error con Google.');
+             setError('Error con Google. Intenta de nuevo.');
           }
       }
       setLoading(false);
