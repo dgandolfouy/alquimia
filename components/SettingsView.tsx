@@ -67,7 +67,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, theme, on
       <Card>
         <h2 className="text-xl font-semibold mb-2">Apariencia</h2>
         <div className="flex items-center justify-between h-8">
-            <span>Tema Oscuro</span>
+            <span>Tema</span>
             <button onClick={() => onThemeChange(theme === 'light' ? 'dark' : 'light')} className={`relative inline-flex h-6 w-11 items-center rounded-full ${theme === 'dark' ? 'bg-violet-500' : 'bg-gray-300'}`}><span className={`inline-block h-4 w-4 transform rounded-full bg-white ${theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} /></button>
         </div>
       </Card>
