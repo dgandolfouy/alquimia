@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { auth, db, isFirebaseConfigured } from './services/firebase';
 import IntroScreen from './components/IntroScreen';
 import type { Transaction, Wallet, View, Settings as AppSettings, Theme, TransmutationList, TransmutationItem, User } from './types';
-import { DEFAULT_WALLETS, DEFAULT_TRANSMUTATION_LISTS } from './constants';
+import { DEFAULT_WALLETS, DEFAULT_TRANSMUTATION_LISTS, DEFAULT_ASSETS } from './constants';
 import Dashboard from './components/Dashboard';
 import TransactionList from './components/TransactionList';
 import SettingsView from './components/SettingsView';
@@ -23,7 +23,7 @@ const App: React.FC = () => {
     
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [wallets, setWallets] = useState<Wallet[]>(DEFAULT_WALLETS);
-    const [settings, setSettings] = useState<AppSettings>({ hourlyRate: 0, assets: [], guarantees: [], monthlyHours: 160 });
+    const [settings, setSettings] = useState<AppSettings>({ hourlyRate: 0, assets: DEFAULT_ASSETS, guarantees: [], monthlyHours: 160 });
     const [transmutationLists, setTransmutationLists] = useState<TransmutationList[]>(DEFAULT_TRANSMUTATION_LISTS);
     const [theme, setTheme] = useState<Theme>('dark');
     
@@ -53,7 +53,7 @@ const App: React.FC = () => {
     useEffect(() => {
       if (!user || !db) {
         setTransactions([]); setWallets(DEFAULT_WALLETS);
-        setSettings({ hourlyRate: 0, assets: [], guarantees: [], monthlyHours: 160 });
+        setSettings({ hourlyRate: 0, assets: DEFAULT_ASSETS, guarantees: [], monthlyHours: 160 });
         setTransmutationLists(DEFAULT_TRANSMUTATION_LISTS);
         return;
       }
@@ -63,18 +63,13 @@ const App: React.FC = () => {
           const data = doc.data();
           setTransactions(data?.transactions || []);
           setWallets(data?.wallets || DEFAULT_WALLETS);
-          setSettings(data?.settings || { hourlyRate: 0, assets: [], guarantees: [], monthlyHours: 160 });
-          
-          let loadedLists = data?.transmutationLists || [];
-          if (!loadedLists.some((l: TransmutationList) => l.isLoansView)) loadedLists.push({ id: 'list-loans', name: 'Préstamos', items: [], isLoansView: true });
-          if (!loadedLists.some((l: TransmutationList) => l.isCreditCardView)) loadedLists.push({ id: 'list-cc', name: 'Tarjetas de Crédito', items: [], isCreditCardView: true });
-          setTransmutationLists(loadedLists);
-          
+          setSettings(data?.settings || { hourlyRate: 0, assets: DEFAULT_ASSETS, guarantees: [], monthlyHours: 160 });
+          setTransmutationLists(data?.transmutationLists || DEFAULT_TRANSMUTATION_LISTS);
           setTheme(data?.theme || 'dark');
         } else {
           docRef.set({
             transactions: [], wallets: DEFAULT_WALLETS,
-            settings: { hourlyRate: 0, assets: [], guarantees: [], monthlyHours: 160 },
+            settings: { hourlyRate: 0, assets: DEFAULT_ASSETS, guarantees: [], monthlyHours: 160 },
             transmutationLists: DEFAULT_TRANSMUTATION_LISTS,
             theme: 'dark', createdAt: new Date().toISOString(),
           });
@@ -114,6 +109,7 @@ const App: React.FC = () => {
     
     const handleLogout = () => auth?.signOut();
     const openModalForNew = () => { setEditingTransaction(null); setPrefilledTransaction(null); setIsModalOpen(true); };
+    const openModalForEdit = (transaction: Transaction) => { setEditingTransaction(transaction); setPrefilledTransaction(null); setIsModalOpen(true); };
     const closeModal = () => { setIsModalOpen(false); setEditingTransaction(null); setPrefilledTransaction(null); };
     
     const handleCompleteTransmutationItem = (item: TransmutationItem, listId: string) => { 
@@ -139,9 +135,9 @@ const App: React.FC = () => {
     const renderView = () => {
       switch (activeView) {
         case 'home': return <Dashboard transactions={transactions} settings={settings} onNewTransaction={openModalForNew} onOpenCards={() => setIsCardsModalOpen(true)} summary={summary} isPrivacyMode={isPrivacyMode} />;
-        case 'transactions': return <TransactionList transactions={transactions} onDelete={(id) => setConfirmationState({ isOpen: true, message: '¿Borrar transacción?', onConfirm: () => deleteTransaction(id) })} settings={settings} isPrivacyMode={isPrivacyMode} />;
+        case 'transactions': return <TransactionList transactions={transactions} onEdit={openModalForEdit} onDelete={(id) => setConfirmationState({ isOpen: true, message: '¿Borrar transacción?', onConfirm: () => deleteTransaction(id) })} settings={settings} isPrivacyMode={isPrivacyMode} transmutationLists={transmutationLists} />;
         case 'transmutar': return <TransmutationView lists={transmutationLists} setLists={handleTransmutationListsChange} onCompleteItem={handleCompleteTransmutationItem} onRequestDeleteList={(id) => setConfirmationState({ isOpen: true, message: '¿Borrar lista?', onConfirm: () => handleTransmutationListsChange(transmutationLists.filter(l => l.id !== id)) })} onRequestDeleteItem={(lid, iid) => setConfirmationState({ isOpen: true, message: '¿Borrar ítem?', onConfirm: () => handleTransmutationListsChange(transmutationLists.map(l => l.id === lid ? { ...l, items: l.items.filter(i => i.id !== iid) } : l)) })} transactions={transactions} isPrivacyMode={isPrivacyMode} />;
-        case 'synthesis': return <SynthesisView transactions={transactions} summary={summary} settings={settings} isPrivacyMode={isPrivacyMode} />;
+        case 'synthesis': return <SynthesisView transactions={transactions} summary={summary} settings={settings} isPrivacyMode={isPrivacyMode} transmutationLists={transmutationLists} />;
         case 'settings': return <SettingsView settings={settings} onSave={handleSettingsSave} theme={theme} onThemeChange={(t) => {setTheme(t); updateFirestore({theme: t})}} wallets={wallets} onWalletsChange={handleWalletsChange} isPrivacyMode={isPrivacyMode} />;
         default: return <Dashboard transactions={transactions} settings={settings} onNewTransaction={openModalForNew} onOpenCards={() => setIsCardsModalOpen(true)} summary={summary} isPrivacyMode={isPrivacyMode} />;
       }
