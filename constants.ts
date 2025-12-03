@@ -16,16 +16,8 @@ export const FEELING_OPTIONS: { [key in TransactionFeeling]: { label: string, co
 };
 
 export const DEFAULT_TRANSMUTATION_LISTS: TransmutationList[] = [
-    {
-        id: 'list-1',
-        name: 'Supermercado',
-        items: []
-    },
-    {
-        id: 'list-2',
-        name: 'Gastos Fijos',
-        items: []
-    }
+    { id: 'list-1', name: 'Supermercado', items: [] },
+    { id: 'list-2', name: 'Gastos Fijos', items: [] }
 ];
 
 export const ELEMENT_DEFINITIONS: { [key in AlchemicalElement]: { keyword: string, description: string, color: string } } = {
