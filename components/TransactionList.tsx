@@ -67,5 +67,4 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onEdit,
     </div>
   );
 };
-
 export default TransactionList;
