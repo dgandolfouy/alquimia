@@ -1,6 +1,15 @@
-export type View = 'home' | 'transactions' | 'transmutar' | 'synthesis' | 'settings';
+export type View = 
+  | 'home' 
+  | 'transactions' 
+  | 'transmutar' 
+  | 'synthesis' 
+  | 'settings';
 
-export type AlchemicalElement = 'Tierra' | 'Agua' | 'Aire' | 'Fuego';
+export type AlchemicalElement = 
+  | 'Tierra' 
+  | 'Agua' 
+  | 'Aire' 
+  | 'Fuego';
 
 export interface Asset {
   id: string;
@@ -28,6 +37,7 @@ export interface Wallet {
 }
 
 export type TransactionType = 'income' | 'expense';
+
 export type TransactionFeeling = 'necessary' | 'pleasure' | 'regret';
 
 export interface Transaction {
@@ -84,6 +94,7 @@ export interface TransmutationList {
 export interface HistoricalPrice {
   price: number;
   date: string;
+  id?: string;
 }
 
 export interface HistoricalPriceItem {
