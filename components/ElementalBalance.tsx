@@ -38,7 +38,7 @@ const ElementalBalance: React.FC<ElementalBalanceProps> = ({ transactions }) => 
             <h2 className="text-xl font-semibold mb-2">Balance Elemental</h2>
             <div className="h-64 mb-4">
                 <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={elementalData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={elementalData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
                         <PolarGrid />
                         <PolarAngleAxis dataKey="element" tick={<CustomTick />} />
                         <PolarRadiusAxis angle={30} domain={[0, 'dataMax']} tick={false} axisLine={false} />
@@ -47,8 +47,8 @@ const ElementalBalance: React.FC<ElementalBalanceProps> = ({ transactions }) => 
                     </RadarChart>
                 </ResponsiveContainer>
             </div>
-             <p className="text-xs text-gray-500 italic border-t pt-3">
-                <strong className="text-emerald-500">Tierra:</strong> Base. <strong className="text-blue-500">Agua:</strong> Vida. <strong className="text-yellow-500">Aire:</strong> Volátil. <strong className="text-rose-500">Fuego:</strong> Pasión.
+             <p className="text-[10px] text-gray-500 italic border-t pt-2 text-center">
+                <strong className="text-emerald-500">Tierra:</strong> Base | <strong className="text-blue-500">Agua:</strong> Vida | <strong className="text-yellow-500">Aire:</strong> Volátil | <strong className="text-rose-500">Fuego:</strong> Pasión
             </p>
         </Card>
     );
