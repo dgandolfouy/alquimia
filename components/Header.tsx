@@ -9,7 +9,13 @@ interface HeaderProps {
   isPrivacyMode: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ userName, onSettingsClick, onLogoutClick, onPrivacyClick, isPrivacyMode }) => {
+const Header: React.FC<HeaderProps> = ({ 
+  userName, 
+  onSettingsClick, 
+  onLogoutClick, 
+  onPrivacyClick, 
+  isPrivacyMode 
+}) => {
   const [isRotating, setIsRotating] = useState(false);
 
   const handleSettingsClick = () => {
@@ -25,22 +31,37 @@ const Header: React.FC<HeaderProps> = ({ userName, onSettingsClick, onLogoutClic
           <span className="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-widest mb-0.5">
             Bienvenido
           </span>
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-violet-500 to-fuchsia-400 leading-none -ml-1" style={{ fontWeight: 700 }}>
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-violet-500 to-fuchsia-400 leading-none -ml-1">
             {userName}
           </h1>
         </div>
       </div>
+      
       <div className="flex items-center gap-3">
-        <button onClick={onPrivacyClick} className="p-2 text-gray-400 hover:text-violet-500 transition-colors">
+        <button 
+          onClick={onPrivacyClick} 
+          className="p-2 text-gray-400 hover:text-violet-500 transition-colors"
+          aria-label={isPrivacyMode ? "Mostrar saldo" : "Ocultar saldo"}
+        >
           {isPrivacyMode ? <EyeOff size={20} /> : <Eye size={20} />}
         </button>
+        
         <button
           onClick={handleSettingsClick}
           className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors rounded-full active:bg-gray-200 dark:active:bg-gray-700"
+          aria-label="Configuración"
         >
-          <Settings size={20} className={`transition-transform duration-500 ease-in-out ${isRotating ? 'rotate-180' : 'rotate-0'}`} />
+          <Settings 
+            size={20} 
+            className={`transition-transform duration-500 ease-in-out ${isRotating ? 'rotate-180' : 'rotate-0'}`} 
+          />
         </button>
-        <button onClick={onLogoutClick} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+        
+        <button 
+          onClick={onLogoutClick} 
+          className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+          aria-label="Cerrar sesión"
+        >
           <LogOut size={20} />
         </button>
       </div>
