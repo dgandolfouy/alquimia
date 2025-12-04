@@ -79,17 +79,15 @@ const App: React.FC = () => {
           if (!hasLoans) {
               loadedLists = [...loadedLists, { id: 'list-loans', name: 'Préstamos', items: [], isLoansView: true }];
           }
-          // Ensure Credit Card list exists
+          // Ensure credit card list exists
           const hasCC = loadedLists.some((l: TransmutationList) => l.isCreditCardView);
           if (!hasCC) {
                loadedLists = [...loadedLists, { id: 'list-cc', name: 'Tarjetas de Crédito', items: [], isCreditCardView: true }];
           }
 
           setTransmutationLists(loadedLists);
-          
           setTheme(data?.theme || 'dark');
         } else {
-          // Initialize new user
           docRef.set({
             transactions: [], wallets: DEFAULT_WALLETS,
             settings: { hourlyRate: 0, assets: DEFAULT_ASSETS, entities: DEFAULT_ENTITIES, guarantees: [] },
@@ -172,7 +170,7 @@ const App: React.FC = () => {
         case 'transactions': return <TransactionList transactions={transactions} onEdit={openModalForEdit} onDelete={(id) => setConfirmationState({ isOpen: true, message: '¿Borrar transacción?', onConfirm: () => deleteTransaction(id) })} settings={settings} isPrivacyMode={isPrivacyMode} />;
         case 'transmutar': return <TransmutationView lists={transmutationLists} setLists={handleTransmutationListsChange} onCompleteItem={handleCompleteTransmutationItem} onRequestDeleteList={(id) => setConfirmationState({ isOpen: true, message: '¿Borrar lista?', onConfirm: () => handleTransmutationListsChange(transmutationLists.filter(l => l.id !== id)) })} onRequestDeleteItem={(lid, iid) => setConfirmationState({ isOpen: true, message: '¿Borrar ítem?', onConfirm: () => handleTransmutationListsChange(transmutationLists.map(l => l.id === lid ? { ...l, items: l.items.filter(i => i.id !== iid) } : l)) })} assets={settings.assets || []} transactions={transactions} isPrivacyMode={isPrivacyMode} />;
         
-        // FIX: Removed onEdit and onDelete props from SynthesisView
+        // FIX: Removed extra props from SynthesisView
         case 'synthesis': return <SynthesisView transactions={transactions} summary={summary} isPrivacyMode={isPrivacyMode} />;
         
         case 'settings': return <SettingsView settings={settings} onSave={handleSettingsSave} theme={theme} onThemeChange={(t) => {setTheme(t); updateFirestore({theme: t})}} wallets={wallets} onWalletsChange={handleWalletsChange} isPrivacyMode={isPrivacyMode} />;
