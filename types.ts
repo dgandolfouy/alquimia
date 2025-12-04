@@ -84,7 +84,6 @@ export interface TransmutationList {
 export interface HistoricalPrice {
   price: number;
   date: string;
-  id?: string;
 }
 
 export interface HistoricalPriceItem {

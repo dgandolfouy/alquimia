@@ -79,7 +79,7 @@ const App: React.FC = () => {
           if (!hasLoans) {
               loadedLists = [...loadedLists, { id: 'list-loans', name: 'Préstamos', items: [], isLoansView: true }];
           }
-          // Ensure Credit Card list exists
+          // Ensure credit card list exists
           const hasCC = loadedLists.some((l: TransmutationList) => l.isCreditCardView);
           if (!hasCC) {
                loadedLists = [...loadedLists, { id: 'list-cc', name: 'Tarjetas de Crédito', items: [], isCreditCardView: true }];
