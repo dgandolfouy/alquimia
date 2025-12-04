@@ -166,15 +166,15 @@ const App: React.FC = () => {
   
     const renderView = () => {
       switch (activeView) {
-        case 'home': return <Dashboard transactions={transactions} settings={settings} onNewTransaction={openModalForNew} onOpenCards={() => setIsCardsModalOpen(true)} summary={summary} isPrivacyMode={isPrivacyMode} transmutationLists={transmutationLists} />;
+        case 'home': return <Dashboard transactions={transactions} settings={settings} onNewTransaction={openModalForNew} onOpenCards={() => setIsCardsModalOpen(true)} summary={summary} isPrivacyMode={isPrivacyMode} />;
         case 'transactions': return <TransactionList transactions={transactions} onEdit={openModalForEdit} onDelete={(id) => setConfirmationState({ isOpen: true, message: '¿Borrar transacción?', onConfirm: () => deleteTransaction(id) })} settings={settings} isPrivacyMode={isPrivacyMode} />;
         case 'transmutar': return <TransmutationView lists={transmutationLists} setLists={handleTransmutationListsChange} onCompleteItem={handleCompleteTransmutationItem} onRequestDeleteList={(id) => setConfirmationState({ isOpen: true, message: '¿Borrar lista?', onConfirm: () => handleTransmutationListsChange(transmutationLists.filter(l => l.id !== id)) })} onRequestDeleteItem={(lid, iid) => setConfirmationState({ isOpen: true, message: '¿Borrar ítem?', onConfirm: () => handleTransmutationListsChange(transmutationLists.map(l => l.id === lid ? { ...l, items: l.items.filter(i => i.id !== iid) } : l)) })} assets={settings.assets || []} transactions={transactions} isPrivacyMode={isPrivacyMode} />;
         
-        // CORREGIDO: SynthesisView no acepta 'onEdit', 'onDelete', ni 'settings'. Solo las props que definimos en su interfaz.
-        case 'synthesis': return <SynthesisView transactions={transactions} isPrivacyMode={isPrivacyMode} summary={summary} />;
+        // FIX: Removed extra props (onEdit, onDelete) from SynthesisView
+        case 'synthesis': return <SynthesisView transactions={transactions} summary={summary} isPrivacyMode={isPrivacyMode} />;
         
         case 'settings': return <SettingsView settings={settings} onSave={handleSettingsSave} theme={theme} onThemeChange={(t) => {setTheme(t); updateFirestore({theme: t})}} wallets={wallets} onWalletsChange={handleWalletsChange} isPrivacyMode={isPrivacyMode} />;
-        default: return <Dashboard transactions={transactions} settings={settings} onNewTransaction={openModalForNew} onOpenCards={() => setIsCardsModalOpen(true)} summary={summary} isPrivacyMode={isPrivacyMode} transmutationLists={transmutationLists} />;
+        default: return <Dashboard transactions={transactions} settings={settings} onNewTransaction={openModalForNew} onOpenCards={() => setIsCardsModalOpen(true)} summary={summary} isPrivacyMode={isPrivacyMode} />;
       }
     };
   
@@ -190,7 +190,6 @@ const App: React.FC = () => {
         <main className="flex-grow p-4 pb-24 pt-32">{renderView()}</main>
         <BottomNav activeView={activeView} setActiveView={setActiveView} />
         
-        {/* CORREGIDO: TransactionModal no acepta 'isPrivacyMode'. Se elimina. */}
         {isModalOpen && <TransactionModal isOpen={isModalOpen} onClose={closeModal} onSave={handleSaveTransaction} transaction={editingTransaction || prefilledTransaction} transmutationLists={transmutationLists} wallets={wallets} settings={settings} transactions={transactions} onScanReceipt={handleOpenReceiptScanner} />}
         {isReceiptScannerOpen && <ReceiptScannerModal isOpen={isReceiptScannerOpen} onClose={() => setIsReceiptScannerOpen(false)} onScanComplete={handleScanComplete} />}
         {isCardsModalOpen && <CreditCardModal isOpen={isCardsModalOpen} onClose={() => setIsCardsModalOpen(false)} wallets={wallets} transactions={transactions} isPrivacyMode={isPrivacyMode} />}

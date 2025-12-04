@@ -1,13 +1,14 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { ArrowUpRight, ArrowDownLeft, ShipWheel, Hourglass, Target, Sparkles } from 'lucide-react';
-import type { Transaction, Settings, TransmutationList } from '../types'; // Agregado TransmutationList
+import type { Transaction, Settings } from '../types';
 import Card from './ui/Card';
 import { getFinancialTip } from '../services/geminiService';
 import { DEFAULT_CATEGORIES } from '../constants';
 import YearlySummary from './YearlySummary';
 import FinancialHealthIndicator from './FinancialHealthIndicator';
 
+// Utility to hide numbers
 const formatMoney = (amount: number, isPrivacy: boolean) => isPrivacy ? '****' : `$${amount.toLocaleString()}`;
 
 const BudgetStatus: React.FC<{ transactions: Transaction[]; settings: Settings; isPrivacyMode: boolean }> = ({ transactions, settings, isPrivacyMode }) => {
@@ -93,10 +94,9 @@ interface DashboardProps {
   onOpenCards: () => void;
   summary: { income: number, expenses: number, balance: number, savingsRate: number };
   isPrivacyMode: boolean;
-  transmutationLists: TransmutationList[]; // CORRECCIÓN: Agregado porque YearlySummary lo necesita
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTransaction, summary, isPrivacyMode, transmutationLists }) => {
+const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTransaction, summary, isPrivacyMode }) => {
   const [tip, setTip] = useState<string>("Cargando sabiduría del Oráculo...");
 
   useEffect(() => {
@@ -206,12 +206,8 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTran
         </div>
       </Card>
 
-      {/* CORRECCIÓN: Se agregan las props faltantes */}
-      <YearlySummary 
-        transactions={transactions} 
-        isPrivacyMode={isPrivacyMode}
-        transmutationLists={transmutationLists} 
-      />
+      {/* FIX: Removed transmutationLists prop from YearlySummary call */}
+      <YearlySummary transactions={transactions} isPrivacyMode={isPrivacyMode} />
 
       <div className="text-center pt-4">
         <div className="inline-block px-4 py-2 bg-gray-200/50 dark:bg-gray-800/50 rounded-full">

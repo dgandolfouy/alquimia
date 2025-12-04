@@ -153,6 +153,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, on
                          )
                      })}
                  </div>
+                 {/* Description below selection */}
                  <p className="text-xs text-center text-gray-500 mt-2 italic">{ELEMENT_DEFINITIONS[element].description}</p>
             </div>
 
