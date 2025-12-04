@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { ArrowUpRight, ArrowDownLeft, ShipWheel, Hourglass, Target, Sparkles } from 'lucide-react';
@@ -206,7 +207,6 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTran
         </div>
       </Card>
 
-      {/* FIX: Removed transmutationLists prop from YearlySummary call */}
       <YearlySummary transactions={transactions} isPrivacyMode={isPrivacyMode} />
 
       <div className="text-center pt-4">

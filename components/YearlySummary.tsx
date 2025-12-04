@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { CalendarDays } from 'lucide-react';
@@ -7,7 +8,7 @@ import { DEFAULT_CATEGORIES } from '../constants';
 
 interface YearlySummaryProps {
   transactions: Transaction[];
-  isPrivacyMode?: boolean; // Optional prop
+  isPrivacyMode: boolean;
 }
 
 const COLORS = [
@@ -16,7 +17,7 @@ const COLORS = [
   '#8b4513', '#ff69b4', '#7b68ee'
 ];
 
-const YearlySummary: React.FC<YearlySummaryProps> = ({ transactions, isPrivacyMode = false }) => {
+const YearlySummary: React.FC<YearlySummaryProps> = ({ transactions, isPrivacyMode }) => {
   const chartData = useMemo(() => {
     const now = new Date();
     const currentYearTxs = transactions.filter(tx => {
@@ -59,7 +60,7 @@ const YearlySummary: React.FC<YearlySummaryProps> = ({ transactions, isPrivacyMo
       return (
         <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
           <p className="font-bold">{name}</p>
-          <p className="text-sm text-violet-500">{isPrivacyMode ? '****' : `$${value.toFixed(2)}`} ({percent}%)</p>
+          <p className="text-sm text-violet-500">{formatMoney(value)} ({percent}%)</p>
         </div>
       );
     }
@@ -70,7 +71,7 @@ const YearlySummary: React.FC<YearlySummaryProps> = ({ transactions, isPrivacyMo
     <Card>
       <div className="flex items-center gap-2 mb-3">
         <CalendarDays size={18} className="text-violet-500" />
-        <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">Resumen Anual</h2>
+        <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">Resumen Anual de Gastos</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center h-64">
         <div className="w-full h-full">
