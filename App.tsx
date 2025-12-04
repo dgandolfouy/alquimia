@@ -79,15 +79,17 @@ const App: React.FC = () => {
           if (!hasLoans) {
               loadedLists = [...loadedLists, { id: 'list-loans', name: 'Préstamos', items: [], isLoansView: true }];
           }
-          // Ensure credit card list exists
+          // Ensure Credit Card list exists
           const hasCC = loadedLists.some((l: TransmutationList) => l.isCreditCardView);
           if (!hasCC) {
                loadedLists = [...loadedLists, { id: 'list-cc', name: 'Tarjetas de Crédito', items: [], isCreditCardView: true }];
           }
 
           setTransmutationLists(loadedLists);
+          
           setTheme(data?.theme || 'dark');
         } else {
+          // Initialize new user
           docRef.set({
             transactions: [], wallets: DEFAULT_WALLETS,
             settings: { hourlyRate: 0, assets: DEFAULT_ASSETS, entities: DEFAULT_ENTITIES, guarantees: [] },
