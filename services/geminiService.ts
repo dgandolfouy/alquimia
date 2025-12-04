@@ -1,14 +1,23 @@
 import { GoogleGenAI } from "@google/genai";
 import { Category } from "../types";
 
-// CORRECCIÓN: Usar import.meta.env para Vite. process.env da error.
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
-const ai = new GoogleGenAI({ apiKey });
+// FIX: Use import.meta.env.VITE_API_KEY for Vite compatibility in production
+// This assumes you have set VITE_API_KEY in Vercel Environment Variables
+const API_KEY = import.meta.env.VITE_API_KEY;
 
-const modelPro = 'gemini-1.5-pro'; 
-const modelMultimodal = 'gemini-1.5-flash';
+if (!API_KEY) {
+  console.warn("VITE_API_KEY is not set. AI features will not work.");
+}
+
+const ai = new GoogleGenAI({ apiKey: API_KEY || "dummy_key_to_prevent_crash" });
+const modelPro = 'gemini-3-pro-preview';
+const modelProImage = 'gemini-3-pro-image-preview';
 
 export const getFinancialTip = async (transactions: any[]): Promise<string> => {
+  if (!API_KEY) {
+    return "Configura tu VITE_API_KEY en Vercel para recibir consejos.";
+  }
+  
   const recentTransactions = transactions.slice(0, 10).map(t => `${t.description}: $${t.amount}`).join(', ');
   const prompt = `
     Actúa como un sabio y empático asesor financiero con una personalidad mística de 'Alquimista'.
@@ -27,7 +36,7 @@ export const getFinancialTip = async (transactions: any[]): Promise<string> => {
     });
     return response.text ? response.text.trim() : "";
   } catch (error) {
-    console.error("Error fetching financial tip from Gemini:", error);
+    console.error("Error fetching financial tip:", error);
     return "La sabiduría del Oráculo está momentáneamente nublada.";
   }
 };
@@ -44,14 +53,45 @@ const fileToGenerativePart = async (file: File) => {
 };
 
 export const analyzeReceipt = async (imageFile: File): Promise<{ name: string; price: number }[]> => {
-  // Nota: Si esto falla por configuración de modelo, devolvemos array vacío para no romper la app
-  return []; 
+  if (!API_KEY) throw new Error("VITE_API_KEY is not set.");
+  
+  const imagePart = await fileToGenerativePart(imageFile);
+  const prompt = `
+    Analyze this receipt image. Extract items and prices. Return ONLY a JSON array like [{"name": "Item", "price": 10}]. Ignore totals/taxes.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+        model: modelProImage,
+        contents: { parts: [imagePart, { text: prompt }] },
+    });
+    
+    let text = response.text ? response.text.trim() : "[]";
+    if (text.startsWith('```json')) text = text.substring(7);
+    if (text.endsWith('```')) text = text.slice(0, -3);
+    
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error("Error analyzing receipt:", error);
+    throw new Error("No se pudo leer el ticket.");
+  }
 };
 
 export const findPromotions = async (items: string[]): Promise<string> => {
-    return "Función en mantenimiento por el momento.";
+    if (!API_KEY) return "Configura VITE_API_KEY.";
+    if (items.length === 0) return "Añade artículos para buscar ofertas.";
+
+    const prompt = `Busca ofertas en Uruguay para: ${items.join(', ')}. Responde brevemente en español.`;
+     try {
+        const response = await ai.models.generateContent({ model: modelPro, contents: prompt });
+        return response.text ? response.text.trim() : "";
+    } catch (error) {
+        return "No se pudieron buscar ofertas.";
+    }
 };
 
-export const suggestCategory = async (description: string, categories: Category[]): Promise<string> => {
-    return categories[0]?.id || "";
+export const suggestCategory = async (description: string, categories: any[]): Promise<string> => {
+   // Placeholder simple logic to prevent crash if AI fails
+   return categories[0]?.id || '';
 };
