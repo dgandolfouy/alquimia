@@ -6,6 +6,7 @@ export interface Asset {
   id: string;
   name: string;
   amount: number;
+  frequency?: string; // Corregido: Agregado para evitar error en constants.ts
 }
 
 export interface Entity {
@@ -84,6 +85,7 @@ export interface TransmutationList {
 export interface HistoricalPrice {
   price: number;
   date: string;
+  id?: string;
 }
 
 export interface HistoricalPriceItem {
