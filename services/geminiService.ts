@@ -1,22 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
 import { Category } from "../types";
 
-// FIX: Use import.meta.env.VITE_API_KEY for Vite/Vercel compatibility
-const API_KEY = import.meta.env.VITE_API_KEY;
-
-if (!API_KEY) {
-  console.warn("VITE_API_KEY is not set. AI features will not work.");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const modelPro = 'gemini-3-pro-preview';
-const modelProImage = 'gemini-3-pro-image-preview';
+// gemini-2.5-flash is recommended for multimodal tasks (text + image input)
+const modelMultimodal = 'gemini-2.5-flash';
 
 export const getFinancialTip = async (transactions: any[]): Promise<string> => {
-  if (!API_KEY) {
-    return "Configura tu VITE_API_KEY en Vercel para recibir consejos.";
-  }
-  
   const recentTransactions = transactions.slice(0, 10).map(t => `${t.description}: $${t.amount}`).join(', ');
   const prompt = `
     Actúa como un sabio y empático asesor financiero con una personalidad mística de 'Alquimista'.
@@ -53,10 +43,6 @@ const fileToGenerativePart = async (file: File) => {
 };
 
 export const analyzeReceipt = async (imageFile: File): Promise<{ name: string; price: number }[]> => {
-  if (!API_KEY) {
-    throw new Error("VITE_API_KEY is not set. Cannot analyze receipt.");
-  }
-  
   const imagePart = await fileToGenerativePart(imageFile);
   
   const prompt = `
@@ -71,7 +57,7 @@ export const analyzeReceipt = async (imageFile: File): Promise<{ name: string; p
 
   try {
     const response = await ai.models.generateContent({
-        model: modelProImage,
+        model: modelMultimodal,
         contents: { parts: [imagePart, { text: prompt }] },
     });
     
@@ -96,9 +82,6 @@ export const analyzeReceipt = async (imageFile: File): Promise<{ name: string; p
 };
 
 export const findPromotions = async (items: string[]): Promise<string> => {
-    if (!API_KEY) {
-        return "La función de búsqueda de ofertas requiere una VITE_API_KEY de Gemini.";
-    }
     if (items.length === 0) {
         return "Añade artículos a tu lista para buscar ofertas."
     }
@@ -127,9 +110,6 @@ export const findPromotions = async (items: string[]): Promise<string> => {
 };
 
 export const suggestCategory = async (description: string, categories: Category[]): Promise<string> => {
-    if (!API_KEY) {
-        throw new Error("API Key de Gemini no configurada.");
-    }
     if (!description) {
         throw new Error("La descripción está vacía.");
     }

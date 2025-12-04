@@ -9,7 +9,7 @@ import { Sparkles, BrainCircuit } from 'lucide-react';
 interface SynthesisViewProps {
     transactions: Transaction[];
     summary: { balance: number };
-    isPrivacyMode: boolean; // Add prop
+    isPrivacyMode: boolean;
 }
 
 const SynthesisView: React.FC<SynthesisViewProps> = ({ transactions, summary, isPrivacyMode }) => {
