@@ -10,7 +10,7 @@ interface SettingsViewProps {
   onThemeChange: (theme: Theme) => void;
   wallets: Wallet[];
   onWalletsChange: (wallets: Wallet[]) => void;
-  isPrivacyMode: boolean; // Add prop
+  isPrivacyMode: boolean;
 }
 
 const ensureArrays = (settings: Settings): Settings => ({
