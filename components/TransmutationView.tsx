@@ -143,6 +143,7 @@ const TransmutationView: React.FC<TransmutationViewProps> = ({
     if (completedItem) onCompleteItem(completedItem, listId);
   };
 
+  // Filter out lists that have their own dedicated views
   const visibleLists = lists.filter(l => !l.isCreditCardView && !l.isLoansView);
 
   return (
