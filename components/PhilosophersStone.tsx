@@ -5,7 +5,7 @@ import { ChevronsRight, Info } from 'lucide-react';
 
 interface PhilosophersStoneProps {
     monthlyBalance: number;
-    isPrivacyMode: boolean; // Add prop
+    isPrivacyMode: boolean;
 }
 
 const PhilosophersStone: React.FC<PhilosophersStoneProps> = ({ monthlyBalance, isPrivacyMode }) => {
