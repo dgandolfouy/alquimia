@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Zap, BookMarked, Flame, BrainCircuit } from 'lucide-react';
 import type { View } from '../types';
