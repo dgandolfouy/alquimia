@@ -8,7 +8,6 @@ import { DEFAULT_CATEGORIES } from '../constants';
 import YearlySummary from './YearlySummary';
 import FinancialHealthIndicator from './FinancialHealthIndicator';
 
-// Utility to hide numbers
 const formatMoney = (amount: number, isPrivacy: boolean) => isPrivacy ? '****' : `$${amount.toLocaleString()}`;
 
 const BudgetStatus: React.FC<{ transactions: Transaction[]; settings: Settings; isPrivacyMode: boolean }> = ({ transactions, settings, isPrivacyMode }) => {
@@ -206,7 +205,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTran
         </div>
       </Card>
 
-      <YearlySummary transactions={transactions} />
+      <YearlySummary transactions={transactions} isPrivacyMode={isPrivacyMode} />
 
       <div className="text-center pt-4">
         <div className="inline-block px-4 py-2 bg-gray-200/50 dark:bg-gray-800/50 rounded-full">
