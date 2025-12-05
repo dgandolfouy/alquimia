@@ -6,7 +6,6 @@ export interface Asset {
   id: string;
   name: string;
   amount: number;
-  frequency?: string; // Corregido: Agregado para evitar error en constants.ts
 }
 
 export interface Entity {
@@ -24,8 +23,8 @@ export interface Wallet {
   id: string;
   name: string;
   type: 'cash' | 'debit' | 'credit';
-  closingDay?: number;
-  dueDay?: number;
+  closingDay?: number; // Día de cierre de la tarjeta (ej. 11)
+  dueDay?: number;     // Día de vencimiento de la tarjeta (ej. 22)
 }
 
 export type TransactionType = 'income' | 'expense';
@@ -44,8 +43,9 @@ export interface Transaction {
   date: string;
   feeling?: TransactionFeeling;
   installments?: {
-    current: number;
-    total: number;
+    current: number; // Número de cuota actual (ej. 1)
+    total: number;   // Total de cuotas (ej. 12)
+    originalId?: string; // ID para agrupar todas las cuotas de una misma compra
   };
 }
 
@@ -85,7 +85,6 @@ export interface TransmutationList {
 export interface HistoricalPrice {
   price: number;
   date: string;
-  id?: string;
 }
 
 export interface HistoricalPriceItem {
