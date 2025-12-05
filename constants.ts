@@ -1,4 +1,3 @@
-
 import type { Wallet, TransactionFeeling, TransmutationList, Entity, Asset, Category, AlchemicalElement } from './types';
 
 export const DEFAULT_ASSETS: Asset[] = [
@@ -8,6 +7,8 @@ export const DEFAULT_ASSETS: Asset[] = [
 export const DEFAULT_WALLETS: Wallet[] = [
     { id: 'wal-1', name: 'Efectivo', type: 'cash' },
     { id: 'wal-2', name: 'Débito Principal', type: 'debit' },
+    { id: 'wal-3', name: 'OCA Card', type: 'credit', closingDay: 11, dueDay: 22 },
+    { id: 'wal-4', name: 'Visa Crédito', type: 'credit', closingDay: 20, dueDay: 5 },
 ];
 
 export const DEFAULT_ENTITIES: Entity[] = [
@@ -42,6 +43,12 @@ export const DEFAULT_TRANSMUTATION_LISTS: TransmutationList[] = [
         name: 'Tarjetas de Crédito',
         items: [],
         isCreditCardView: true 
+    },
+    {
+        id: 'list-loans',
+        name: 'Préstamos',
+        items: [],
+        isLoansView: true
     },
     {
         id: 'list-1',
