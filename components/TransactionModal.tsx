@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as Lucide from 'lucide-react';
+import { addMonths, setDate, getDate, isAfter } from 'date-fns';
 import type { Transaction, TransmutationList, Wallet, TransactionType, TransactionFeeling, Settings, AlchemicalElement } from '../types';
 import { FEELING_OPTIONS, ELEMENT_DEFINITIONS } from '../constants';
 
@@ -51,9 +52,9 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, on
   const [element, setElement] = useState<AlchemicalElement>('Tierra');
   const [walletId, setWalletId] = useState<string>(transaction?.walletId || '');
   const [entityId, setEntityId] = useState<string>(transaction?.entityId || (settings.entities?.[0]?.id || ''));
-  const [date, setDate] = useState<string>(transaction?.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0]);
+  const [date, setDateStr] = useState<string>(transaction?.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0]);
   const [feeling, setFeeling] = useState<TransactionFeeling>(transaction?.feeling || 'necessary');
-  const [installments, setInstallments] = useState<{ current: number, total: number }>({ current: 1, total: 1 });
+  const [installmentsCount, setInstallmentsCount] = useState<number>(1);
 
   const selectedWallet = wallets.find(w => w.id === walletId);
 
@@ -66,10 +67,11 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, on
       setElement((transaction as any).element || 'Tierra');
       setWalletId(transaction.walletId || '');
       setEntityId(transaction.entityId || (settings.entities?.[0]?.id || ''));
-      setDate(transaction.date ? new Date(transaction.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+      setDateStr(transaction.date ? new Date(transaction.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
       setFeeling(transaction.feeling || 'necessary');
-      if (transaction.installments) setInstallments(transaction.installments);
+      if (transaction.installments) setInstallmentsCount(transaction.installments.total);
     } else {
+      // Defaults
       setType('expense');
       setAmount('');
       setDescription('');
@@ -77,9 +79,9 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, on
       setElement('Tierra');
       setWalletId(wallets.length > 0 ? wallets[0].id : '');
       setEntityId(settings.entities?.[0]?.id || '');
-      setDate(new Date().toISOString().split('T')[0]);
+      setDateStr(new Date().toISOString().split('T')[0]);
       setFeeling('necessary');
-      setInstallments({ current: 1, total: 1 });
+      setInstallmentsCount(1);
     }
   }, [transaction, isOpen]);
 
@@ -88,21 +90,71 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, on
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0 || !listId || !walletId) return;
 
-    const newTransactionData: any = {
-      type, amount: parsedAmount, description, listId, element, walletId, entityId,
-      date: new Date(date).toISOString(),
-      feeling: type === 'expense' ? feeling : undefined,
-    };
-    
-    if (selectedWallet?.type === 'credit') {
-        newTransactionData.installments = installments;
-    }
-    
-    if (transaction && 'id' in transaction) {
-      onSave({ ...transaction, ...newTransactionData });
+    const baseDate = new Date(date);
+
+    // --- LOGICA DE TARJETAS DE CREDITO Y CUOTAS ---
+    if (selectedWallet?.type === 'credit' && installmentsCount > 1) {
+        const closingDay = selectedWallet.closingDay || 31; // Default to end of month if not set
+        const dueDay = selectedWallet.dueDay || 10;         // Default to 10th if not set
+        const purchaseDay = getDate(baseDate);
+        
+        // Determine if purchase is after closing date (moves to next month's statement)
+        let statementMonthOffset = isAfter(baseDate, setDate(baseDate, closingDay)) ? 1 : 0;
+
+        // Calculate the installment amount
+        const installmentAmount = parsedAmount / installmentsCount;
+        const originalId = Date.now().toString();
+
+        // Generate transactions for each installment
+        for (let i = 0; i < installmentsCount; i++) {
+            // Calculate the billing month for this installment
+            // Installment 1 pays on statementMonthOffset + 0
+            // Installment 2 pays on statementMonthOffset + 1, etc.
+            const billingDateCandidate = addMonths(baseDate, statementMonthOffset + i);
+            
+            // Set the date to the Due Day (Vencimiento)
+            let finalPaymentDate = setDate(billingDateCandidate, dueDay);
+
+            // Edge case: If Due Day is small (e.g. 5th) and Closing is large (e.g. 25th), 
+            // the payment is usually in the *next* month relative to the statement close.
+            // Heuristic: If dueDay < closingDay, add 1 month to payment date.
+            if (dueDay < closingDay) {
+                 finalPaymentDate = addMonths(finalPaymentDate, 1);
+            }
+
+            const newTx: any = {
+                type,
+                amount: parseFloat(installmentAmount.toFixed(2)), // rounding
+                description: `${description} (${i + 1}/${installmentsCount})`,
+                listId,
+                element,
+                walletId,
+                entityId,
+                date: finalPaymentDate.toISOString(),
+                feeling: type === 'expense' ? feeling : undefined,
+                installments: {
+                    current: i + 1,
+                    total: installmentsCount,
+                    originalId
+                }
+            };
+            onSave(newTx);
+        }
     } else {
-      onSave(newTransactionData);
+        // Normal Transaction (Cash, Debit, or 1 installment credit)
+        const newTransactionData: any = {
+            type, amount: parsedAmount, description, listId, element, walletId, entityId,
+            date: baseDate.toISOString(),
+            feeling: type === 'expense' ? feeling : undefined,
+        };
+
+        if (transaction && 'id' in transaction) {
+            onSave({ ...transaction, ...newTransactionData });
+        } else {
+            onSave(newTransactionData);
+        }
     }
+    
     onClose();
   };
 
@@ -129,7 +181,22 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, on
                  </select>
             </div>
 
-            <input type="number" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} className="w-full bg-gray-200 dark:bg-gray-700 p-3 rounded-lg text-3xl font-bold text-center" required />
+            <div className="flex gap-2">
+                <input type="number" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} className="w-full bg-gray-200 dark:bg-gray-700 p-3 rounded-lg text-3xl font-bold text-center" required />
+                 {/* Selector de Cuotas solo si es Crédito y Gasto */}
+                {selectedWallet?.type === 'credit' && type === 'expense' && !(transaction && 'id' in transaction) && (
+                    <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-lg flex flex-col items-center justify-center p-1">
+                        <span className="text-[10px] text-gray-500">Cuotas</span>
+                        <select 
+                            value={installmentsCount} 
+                            onChange={e => setInstallmentsCount(Number(e.target.value))}
+                            className="bg-transparent font-bold text-lg text-center w-full appearance-none focus:outline-none"
+                        >
+                            {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
+                    </div>
+                )}
+            </div>
 
             <div className="flex items-center gap-2">
                 <input type="text" placeholder="Descripción" value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-gray-200 dark:bg-gray-700 p-3 rounded-lg" required />
@@ -153,7 +220,6 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, on
                          )
                      })}
                  </div>
-                 {/* Description below selection */}
                  <p className="text-xs text-center text-gray-500 mt-2 italic">{ELEMENT_DEFINITIONS[element].description}</p>
             </div>
 
@@ -172,20 +238,16 @@ const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose, on
                      </select>
                 </div>
             </div>
-            
-            {selectedWallet?.type === 'credit' && type === 'expense' && (
-                <div className="flex gap-2 items-center bg-gray-100 dark:bg-gray-900/50 p-3 rounded-lg">
-                    <div className="flex-grow">
-                        <label className="text-xs text-gray-500 block mb-1">Cuota Actual</label>
-                        <input type="number" min="1" value={installments.current} onChange={e => setInstallments(p => ({...p, current: Number(e.target.value)}))} className="w-full bg-white dark:bg-gray-700 p-2 rounded text-sm text-center"/>
-                    </div>
-                    <span className="text-gray-400 text-xl font-light">/</span>
-                    <div className="flex-grow">
-                        <label className="text-xs text-gray-500 block mb-1">Total Cuotas</label>
-                        <input type="number" min="1" value={installments.total} onChange={e => setInstallments(p => ({...p, total: Number(e.target.value)}))} className="w-full bg-white dark:bg-gray-700 p-2 rounded text-sm text-center"/>
-                    </div>
-                </div>
-            )}
+
+            <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Fecha</label>
+                <input 
+                    type="date" 
+                    value={date} 
+                    onChange={e => setDateStr(e.target.value)} 
+                    className="w-full bg-gray-200 dark:bg-gray-700 p-2 rounded-lg text-sm"
+                />
+            </div>
             
             {type === 'expense' && (
                 <div>
