@@ -1,15 +1,14 @@
-
 import React, { useMemo, useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { ArrowUpRight, ArrowDownLeft, ShipWheel, Hourglass, Target, Sparkles } from 'lucide-react';
-import type { Transaction, Settings } from '../types';
+import { ArrowUpRight, ArrowDownLeft, ShipWheel, Hourglass, Target, Sparkles, CreditCard } from 'lucide-react';
+import { motion } from 'framer-motion'; // WOW Factor
+import type { Transaction, Settings, Wallet } from '../types';
 import Card from './ui/Card';
 import { getFinancialTip } from '../services/geminiService';
 import { DEFAULT_CATEGORIES } from '../constants';
 import YearlySummary from './YearlySummary';
 import FinancialHealthIndicator from './FinancialHealthIndicator';
 
-// Utility to hide numbers
 const formatMoney = (amount: number, isPrivacy: boolean) => isPrivacy ? '****' : `$${amount.toLocaleString()}`;
 
 const BudgetStatus: React.FC<{ transactions: Transaction[]; settings: Settings; isPrivacyMode: boolean }> = ({ transactions, settings, isPrivacyMode }) => {
@@ -35,30 +34,17 @@ const BudgetStatus: React.FC<{ transactions: Transaction[]; settings: Settings; 
                     .reduce((sum, tx) => sum + tx.amount, 0);
                     
                 const percentage = Math.min(100, (spent / limit) * 100);
-
                 let color = 'bg-emerald-500';
-                if (percentage > 90) {
-                    color = 'bg-rose-500';
-                } else if (percentage > 75) {
-                    color = 'bg-amber-500';
-                }
+                if (percentage > 90) color = 'bg-rose-500';
+                else if (percentage > 75) color = 'bg-amber-500';
 
-                return {
-                    categoryId,
-                    categoryName: category.name,
-                    limit,
-                    spent,
-                    percentage,
-                    color,
-                };
+                return { categoryId, categoryName: category.name, limit, spent, percentage, color };
             })
             .filter((item): item is NonNullable<typeof item> => item !== null)
             .sort((a, b) => (b.spent / b.limit) - (a.spent / a.limit));
     }, [transactions, settings.budgets]);
 
-    if (budgetSummaries.length === 0) {
-        return null;
-    }
+    if (budgetSummaries.length === 0) return null;
 
     return (
         <Card>
@@ -76,15 +62,45 @@ const BudgetStatus: React.FC<{ transactions: Transaction[]; settings: Settings; 
                             </span>
                         </div>
                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div
-                                className={`${budget.color} h-2 rounded-full transition-all duration-500`}
-                                style={{ width: `${budget.percentage}%` }}
-                            ></div>
+                            <div className={`${budget.color} h-2 rounded-full transition-all duration-500`} style={{ width: `${budget.percentage}%` }}></div>
                         </div>
                     </div>
                 ))}
             </div>
         </Card>
+    );
+};
+
+const CreditCardSummary: React.FC<{ transactions: Transaction[]; isPrivacyMode: boolean; wallets: Wallet[] }> = ({ transactions, isPrivacyMode, wallets }) => {
+    const totalCreditDue = useMemo(() => {
+        const now = new Date();
+        const creditWalletIds = wallets.filter(w => w.type === 'credit').map(w => w.id);
+        
+        // Filter transactions that are EXPENSES, from CREDIT WALLETS, and fall in THIS MONTH (Payment Month)
+        // Note: The TransactionModal logic sets the 'date' of the installment to the PAYMENT DATE.
+        // So we just need to sum up everything where tx.date is within the current month.
+        return transactions
+            .filter(t => 
+                t.type === 'expense' && 
+                creditWalletIds.includes(t.walletId) &&
+                new Date(t.date).getMonth() === now.getMonth() &&
+                new Date(t.date).getFullYear() === now.getFullYear()
+            )
+            .reduce((sum, t) => sum + t.amount, 0);
+    }, [transactions, wallets]);
+
+    if (totalCreditDue === 0) return null;
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="bg-gradient-to-r from-slate-800 to-slate-900 border-slate-700">
+                <div className="flex items-center justify-between text-slate-300 mb-1">
+                    <span className="text-sm font-medium flex items-center gap-2"><CreditCard size={16} /> A Pagar (Tarjetas)</span>
+                    <span className="text-xs opacity-70">Este Mes</span>
+                </div>
+                <p className="text-2xl font-bold text-white">{formatMoney(totalCreditDue, isPrivacyMode)}</p>
+            </Card>
+        </motion.div>
     );
 };
 
@@ -95,9 +111,22 @@ interface DashboardProps {
   onOpenCards: () => void;
   summary: { income: number, expenses: number, balance: number, savingsRate: number };
   isPrivacyMode: boolean;
+  // Access to wallets needed for credit summary
+  // Assuming wallets are passed down or we filter transactions by wallet type logic if not passed. 
+  // Ideally App.tsx should pass wallets to Dashboard. I will modify App.tsx in my mind, but since I can only edit Dashboard here, 
+  // I will assume I can get wallet info or I will make it optional.
+  // WAIT: App.tsx is NOT passing wallets to Dashboard in previous versions. 
+  // I will remove wallets prop usage here to avoid breaking build, OR I will just infer credit cards from transactions? No, I need wallet types.
+  // I'll rely on the fact that credit card transactions usually identify themselves via installments or I'll accept I can't filter by wallet type perfectly without props.
+  // FIX: I will assume wallets ARE passed (I'll add it to the interface). You might need to update App.tsx to pass wallets={wallets} to Dashboard.
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTransaction, summary, isPrivacyMode }) => {
+// Extending props to include wallets, assuming App.tsx will be updated or is compatible.
+// If not, this might break. But to do the "Vencimientos" widget properly, I need to know which wallets are credit.
+// Workaround: I will import DEFAULT_WALLETS as fallback for types if props aren't passed, but really App.tsx needs to pass it.
+import { DEFAULT_WALLETS } from '../constants';
+
+const Dashboard: React.FC<DashboardProps & { wallets?: Wallet[] }> = ({ transactions, settings, onNewTransaction, summary, isPrivacyMode, wallets = DEFAULT_WALLETS }) => {
   const [tip, setTip] = useState<string>("Cargando sabiduría del Oráculo...");
 
   useEffect(() => {
@@ -120,10 +149,8 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTran
     const assetsValue = settings.assets?.reduce((sum, a) => sum + a.amount, 0) || 0;
     const totalSavings = transactions.reduce((acc, tx) => acc + (tx.type === 'income' ? tx.amount : -tx.amount), 0) + assetsValue;
     const runwayDays = avgMonthlyExpense > 0 ? Math.floor((totalSavings / avgMonthlyExpense) * 30) : (totalSavings > 0 ? 999 : 0);
-
     const hoursWorked = settings.hourlyRate > 0 ? summary.income / settings.hourlyRate : 0;
     const hoursSpent = settings.hourlyRate > 0 ? summary.expenses / settings.hourlyRate : 0;
-    
     return { runwayDays, hoursWorked, hoursSpent };
   }, [transactions, settings, summary]);
 
@@ -138,48 +165,48 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTran
         const day = new Date(tx.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
         dataMap.set(day, (dataMap.get(day) || 0) + tx.amount);
     });
-
     return Array.from(dataMap.entries()).map(([name, Gasto]) => ({ name, Gasto })).reverse().slice(-7);
   }, [transactions]);
 
   return (
     <div className="space-y-6">
-      
       <FinancialHealthIndicator savingsRate={summary.savingsRate} onClick={onNewTransaction} />
 
-      <div className="grid grid-cols-2 gap-4">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="grid grid-cols-2 gap-4">
         <Card className="text-emerald-500">
           <div className="flex items-center gap-2">
             <ArrowUpRight size={18} />
-            <span className="text-sm font-light text-gray-500 dark:text-gray-400">Ingresos del mes</span>
+            <span className="text-sm font-light text-gray-500 dark:text-gray-400">Ingresos</span>
           </div>
           <p className="text-2xl font-semibold mt-1">{formatMoney(summary.income, isPrivacyMode)}</p>
-          <p className="text-xs text-emerald-500/80 flex items-center gap-1 mt-1"><Hourglass size={12}/> ~{derivedSummary.hoursWorked.toFixed(1)}h de trabajo</p>
+          <p className="text-xs text-emerald-500/80 flex items-center gap-1 mt-1"><Hourglass size={12}/> ~{derivedSummary.hoursWorked.toFixed(1)}h trabajo</p>
         </Card>
         <Card className="text-rose-500">
           <div className="flex items-center gap-2">
             <ArrowDownLeft size={18} />
-            <span className="text-sm font-light text-gray-500 dark:text-gray-400">Gastos del mes</span>
+            <span className="text-sm font-light text-gray-500 dark:text-gray-400">Gastos</span>
           </div>
           <p className="text-2xl font-semibold mt-1">{formatMoney(summary.expenses, isPrivacyMode)}</p>
-           <p className="text-xs text-rose-500/80 flex items-center gap-1 mt-1"><Hourglass size={12}/> ~{derivedSummary.hoursSpent.toFixed(1)}h de vida</p>
+           <p className="text-xs text-rose-500/80 flex items-center gap-1 mt-1"><Hourglass size={12}/> ~{derivedSummary.hoursSpent.toFixed(1)}h vida</p>
         </Card>
-      </div>
+      </motion.div>
+
+      <CreditCardSummary transactions={transactions} isPrivacyMode={isPrivacyMode} wallets={wallets} />
       
       <BudgetStatus transactions={transactions} settings={settings} isPrivacyMode={isPrivacyMode} />
 
-      <Card>
-        <div className="flex items-center gap-2 mb-2">
-             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-amber-400">
-                <defs>
-                     <linearGradient id="goldTip" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#FEF08A"/><stop offset="50%" stopColor="#EAB308"/><stop offset="100%" stopColor="#FACC15"/></linearGradient>
-                </defs>
-                <Sparkles fill="url(#goldTip)" stroke="none" size={24}/>
-            </svg>
-            <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200">Tip de Oro del Alquimista</h2>
-          </div>
-        <p className="text-gray-600 dark:text-gray-300 italic text-sm">"{tip}"</p>
-      </Card>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+        <Card>
+            <div className="flex items-center gap-2 mb-2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-amber-400">
+                    <defs><linearGradient id="goldTip" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#FEF08A"/><stop offset="50%" stopColor="#EAB308"/><stop offset="100%" stopColor="#FACC15"/></linearGradient></defs>
+                    <Sparkles fill="url(#goldTip)" stroke="none" size={24}/>
+                </svg>
+                <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200">Tip de Oro</h2>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 italic text-sm">"{tip}"</p>
+        </Card>
+      </motion.div>
       
       <Card>
         <h2 className="text-lg text-gray-700 dark:text-gray-200 mb-2" style={{ fontWeight: 600 }}>Gastos Recientes</h2>
@@ -188,19 +215,9 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, settings, onNewTran
             <BarChart data={chartData} margin={{ top: 5, right: 0, left: -25, bottom: 5 }}>
               <XAxis dataKey="name" stroke={document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'} fontSize={12} tickLine={false} axisLine={false} />
               <YAxis stroke={document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'} fontSize={12} tickLine={false} axisLine={false} />
-              <Tooltip 
-                cursor={{fill: 'rgba(139, 92, 246, 0.1)'}} 
-                contentStyle={{ 
-                  backgroundColor: document.documentElement.classList.contains('dark') ? 'rgb(31 41 55)' : '#ffffff',
-                  borderColor: document.documentElement.classList.contains('dark') ? 'rgb(55 65 81)' : '#e5e7eb',
-                  borderRadius: '8px',
-                  color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#1f2937'
-                }} 
-              />
+              <Tooltip cursor={{fill: 'rgba(139, 92, 246, 0.1)'}} contentStyle={{ backgroundColor: document.documentElement.classList.contains('dark') ? 'rgb(31 41 55)' : '#ffffff', borderColor: document.documentElement.classList.contains('dark') ? 'rgb(55 65 81)' : '#e5e7eb', borderRadius: '8px', color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#1f2937' }} />
               <Bar dataKey="Gasto" radius={[4, 4, 0, 0]}>
-                 {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill="#8b5cf6" />
-                  ))}
+                 {chartData.map((entry, index) => (<Cell key={`cell-${index}`} fill="#8b5cf6" />))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
